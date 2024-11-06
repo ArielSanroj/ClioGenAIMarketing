@@ -56,10 +56,10 @@ def apply_custom_styles():
             align-items: center;
         }
         
-        /* Chat input */
-        .chat-input-container {
+        /* Chat input container and styling */
+        .chat-container {
             position: fixed;
-            bottom: 60px;
+            bottom: 80px;
             left: 300px;
             right: 2rem;
             background-color: white;
@@ -70,11 +70,34 @@ def apply_custom_styles():
         }
         
         .chat-input {
-            width: 100%;
+            width: calc(100% - 50px);
             padding: 0.75rem;
             border: 1px solid #E5E7EB;
             border-radius: 8px;
             outline: none;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        
+        .chat-input:focus {
+            border-color: #1E1B4B;
+            box-shadow: 0 0 0 2px rgba(30, 27, 75, 0.1);
+        }
+        
+        .send-button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            color: #1E1B4B;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+        
+        .send-button:hover {
+            color: #2d2a5c;
         }
         
         /* Sidebar navigation */
@@ -89,18 +112,21 @@ def apply_custom_styles():
         
         /* Main content area */
         .main-content {
-            margin-bottom: 120px;  /* Space for fixed footer and chat input */
+            margin-bottom: 160px;
             padding: 2rem;
         }
         
-        /* Responsive columns */
-        .row-widget.stHorizontal {
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        
-        .row-widget.stHorizontal > div {
-            flex: 1 1 200px;
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chat-container {
+                left: 1rem;
+                right: 1rem;
+                bottom: 70px;
+            }
+            
+            .main-content {
+                margin-bottom: 140px;
+            }
         }
         
         /* Custom styling for specific elements */
@@ -112,6 +138,5 @@ def apply_custom_styles():
         .css-1vq4p4l {  /* Main content */
             padding: 2rem;
         }
-        
         </style>
     """, unsafe_allow_html=True)
