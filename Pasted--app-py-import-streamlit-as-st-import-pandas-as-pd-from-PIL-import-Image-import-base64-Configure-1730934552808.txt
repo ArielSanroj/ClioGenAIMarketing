@@ -1,0 +1,133 @@
+# app.py
+import streamlit as st
+import pandas as pd
+from PIL import Image
+import base64
+
+# Configure the page
+st.set_page_config(
+    page_title="Clio AI Marketing",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS to match the design
+st.markdown("""
+    <style>
+        .css-1d391kg {
+            background-color: #F3F1FF;
+        }
+        .stButton>button {
+            width: 100%;
+            background-color: #1E1B4B;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+        }
+        .action-button {
+            background-color: white !important;
+            color: black !important;
+            border: 1px solid #E5E7EB !important;
+        }
+        .highlight-button {
+            background-color: #FFF8E6 !important;
+            border: 1px solid #FFE4A0 !important;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #1E1B4B;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .chat-input {
+            position: fixed;
+            bottom: 60px;
+            left: 0;
+            width: 100%;
+            padding: 1rem;
+            background-color: white;
+            border-top: 1px solid #E5E7EB;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Sidebar
+with st.sidebar:
+    # Logo
+    st.image("logo.png", width=50)  # You'll need to create/add the logo image
+    
+    # Navigation buttons
+    st.button("View my ICP")
+    st.button("Market analysis")
+    st.button("Consumer Archetypes")
+    st.button("Social Media Sentiment")
+    st.button("New Chat")
+    st.button("Chats history")
+
+# Main content
+col1, col2, col3 = st.columns([7, 2, 1])
+with col3:
+    st.button("Save and Exit")
+
+# Action buttons
+st.markdown("<br><br>", unsafe_allow_html=True)  # Spacing
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.markdown("""
+        <button class='stButton highlight-button'>
+            Generate Content Marketing
+        </button>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown("""
+        <button class='stButton action-button'>
+            Create Social Media Campaign
+        </button>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown("""
+        <button class='stButton action-button'>
+            Analyze Target Audience
+        </button>
+    """, unsafe_allow_html=True)
+
+with col4:
+    st.markdown("""
+        <button class='stButton action-button'>
+            Generate SEO recommendations
+        </button>
+    """, unsafe_allow_html=True)
+
+# Chat input (fixed at bottom)
+st.markdown("""
+    <div class='chat-input'>
+        <input type='text' placeholder='Message Clio AI' style='width: 100%; padding: 0.5rem;'>
+    </div>
+""", unsafe_allow_html=True)
+
+# Footer
+st.markdown("""
+    <div class='footer'>
+        <div>
+            <a href='#' style='color: white; margin-right: 2rem;'>Contact Us</a>
+            <a href='#' style='color: white;'>Privacy Policy</a>
+        </div>
+        <div>
+            <a href='#' style='color: white; margin-right: 1rem;'><i class='fab fa-facebook'></i></a>
+            <a href='#' style='color: white; margin-right: 1rem;'><i class='fab fa-instagram'></i></a>
+            <a href='#' style='color: white; margin-right: 1rem;'><i class='fab fa-youtube'></i></a>
+            <a href='#' style='color: white; margin-right: 1rem;'><i class='fab fa-twitter'></i></a>
+            <a href='#' style='color: white; margin-right: 1rem;'><i class='fab fa-whatsapp'></i></a>
+            <a href='#' style='color: white;'><i class='fab fa-linkedin'></i></a>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
