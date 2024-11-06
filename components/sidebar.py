@@ -2,7 +2,7 @@ import streamlit as st
 
 def render_sidebar():
     with st.sidebar:
-        st.image("assets/logo.svg", width=100)
+        st.image("logoclio.png", width=100)
         
         st.markdown("### Navigation")
         
