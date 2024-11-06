@@ -1,0 +1,139 @@
+// src/constants/theme.js
+export const COLORS = {
+  background: '#F3F1FF',
+  primary: '#1E1B4B',
+  accent: '#FDB813',
+  highlight: '#FFF8E6',
+  highlightBorder: '#FFE4A0',
+};
+
+// src/constants/menuItems.js
+import { BarChart2, Users, Radio, MessageCircle, Clock } from 'lucide-react';
+
+export const MENU_ITEMS = [
+  { icon: BarChart2, text: "View my ICP", path: "/dashboard/icp" },
+  { icon: BarChart2, text: "Market analysis", path: "/dashboard/market-analysis" },
+  { icon: Users, text: "Consumer Archetypes", path: "/dashboard/consumer-archetypes" },
+  { icon: Radio, text: "Social Media Sentiment", path: "/dashboard/social-sentiment" },
+  { icon: MessageCircle, text: "New Chat", path: "/dashboard/chat" },
+  { icon: Clock, text: "Chats history", path: "/dashboard/history" }
+];
+
+// src/components/common/Button.jsx
+import React from 'react';
+import { COLORS } from '@/constants/theme';
+
+export const Button = ({ 
+  children, 
+  variant = 'primary', 
+  highlighted = false,
+  ...props 
+}) => {
+  const getStyles = () => {
+    switch (variant) {
+      case 'primary':
+        return {
+          backgroundColor: COLORS.primary,
+          color: 'white',
+        };
+      case 'action':
+        return {
+          backgroundColor: highlighted ? COLORS.highlight : 'white',
+          borderColor: highlighted ? COLORS.highlightBorder : '#E5E7EB',
+        };
+      default:
+        return {};
+    }
+  };
+
+  return (
+    <button
+      className="px-6 py-3 rounded-lg border transition-colors duration-200"
+      style={getStyles()}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+// src/components/dashboard/Sidebar.jsx
+import React from 'react';
+import { MENU_ITEMS } from '@/constants/menuItems';
+import { COLORS } from '@/constants/theme';
+import { Logo } from '@/components/common/Logo';
+
+export const Sidebar = () => {
+  return (
+    <div style={{ backgroundColor: COLORS.background }} className="w-64 border-r border-gray-200">
+      <div className="p-4">
+        <Logo />
+      </div>
+      <nav className="mt-8">
+        {MENU_ITEMS.map((item, index) => (
+          <button
+            key={index}
+            style={{ color: COLORS.primary }}
+            className="w-full flex items-center px-6 py-3 hover:bg-white"
+          >
+            <item.icon className="w-5 h-5" />
+            <span className="ml-3 font-medium">{item.text}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+};
+
+// src/components/layouts/DashboardLayout.jsx
+import React from 'react';
+import { Sidebar } from '@/components/dashboard/Sidebar';
+import { TopBar } from '@/components/dashboard/TopBar';
+import { Footer } from '@/components/dashboard/Footer';
+import { ChatInput } from '@/components/dashboard/ChatInput';
+import { COLORS } from '@/constants/theme';
+
+export const DashboardLayout = ({ children }) => {
+  return (
+    <div style={{ backgroundColor: COLORS.background }} className="min-h-screen flex">
+      <Sidebar />
+      <div className="flex-1 relative">
+        <TopBar />
+        <main className="p-8">
+          {children}
+        </main>
+        <ChatInput />
+        <Footer />
+      </div>
+    </div>
+  );
+};
+
+// src/pages/dashboard/index.jsx
+import { DashboardLayout } from '@/components/layouts/DashboardLayout';
+import { ActionButtons } from '@/components/dashboard/ActionButtons';
+
+export default function Dashboard() {
+  return (
+    <DashboardLayout>
+      <ActionButtons />
+    </DashboardLayout>
+  );
+}
+
+// src/styles/globals.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-background: #F3F1FF;
+  --color-primary: #1E1B4B;
+  --color-accent: #FDB813;
+  --color-highlight: #FFF8E6;
+  --color-highlight-border: #FFE4A0;
+}
+
+body {
+  background-color: var(--color-background);
+}

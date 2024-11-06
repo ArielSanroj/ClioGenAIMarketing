@@ -21,7 +21,7 @@ def generate_marketing_content(business_info: str, content_type: str) -> dict:
     """
     
     response = openai_client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4",
         messages=[{"role": "user", "content": prompt}],
         response_format={"type": "json_object"}
     )
@@ -46,7 +46,7 @@ def analyze_audience(business_info: str) -> dict:
     """
     
     response = openai_client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4",
         messages=[{"role": "user", "content": prompt}],
         response_format={"type": "json_object"}
     )
@@ -68,7 +68,7 @@ def generate_seo_recommendations(content: str) -> dict:
     """
     
     response = openai_client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4",
         messages=[{"role": "user", "content": prompt}],
         response_format={"type": "json_object"}
     )
