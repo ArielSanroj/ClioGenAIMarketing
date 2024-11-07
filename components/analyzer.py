@@ -366,7 +366,7 @@ def display_analysis_results(result: CompanyInfo):
                 
                 with cols[1]:
                     if product.get('image_url'):
-                        st.image(product['image_url'], use_column_width=True)
+                        st.image(product['image_url'], use_container_width=True)  # Updated from use_column_width
 
 if __name__ == "__main__":
     render_analyzer()
