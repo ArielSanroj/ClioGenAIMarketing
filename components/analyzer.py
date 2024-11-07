@@ -30,6 +30,8 @@ def initialize_session_state():
         st.session_state.show_chat = False
     if 'analysis_complete' not in st.session_state:
         st.session_state.analysis_complete = False
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = 'analyzer'
 
 def create_retry_session():
     """Create a requests session with retry logic"""
@@ -45,21 +47,21 @@ def create_retry_session():
 
 class UniversalWebScraper:
     """Universal web scraper with comprehensive data extraction capabilities"""
-    
+
     def __init__(self):
         """Initialize the scraper with proper headers and retry session"""
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         self.session = create_retry_session()
-        
+
     def analyze_website(self, url: str) -> CompanyInfo:
         """Main function to analyze company website"""
         try:
             response = self.session.get(url, headers=self.headers, timeout=30)
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
-            
+
             return CompanyInfo(
                 name=self.extract_company_name(soup, url),
                 description=self.extract_company_description(soup),
@@ -89,7 +91,7 @@ class UniversalWebScraper:
             'meta[property="og:title"]': 'content',
             'meta[name="application-name"]': 'content'
         }
-        
+
         for selector, attr in meta_tags.items():
             element = soup.select_one(selector)
             if element and element.get(attr):
@@ -100,7 +102,7 @@ class UniversalWebScraper:
             '.logo', '.brand', '.company-name', '.site-title',
             'header h1', '#logo', '.header-logo'
         ]
-        
+
         for selector in header_selectors:
             element = soup.select_one(selector)
             if element:
@@ -132,7 +134,7 @@ class UniversalWebScraper:
             '.about-us', '.company-description', '.description',
             '#about', '.mission-statement', '.overview'
         ]
-        
+
         for selector in description_selectors:
             element = soup.select_one(selector)
             if element:
@@ -159,33 +161,33 @@ class UniversalWebScraper:
             'pinterest': r'pinterest\.com',
             'tiktok': r'tiktok\.com'
         }
-        
+
         social_links = {}
-        
+
         # Check both href attributes and text content
         for platform, pattern in social_platforms.items():
             links = soup.find_all('a', href=re.compile(pattern, re.I))
             if not links:
                 # Try finding by icon classes
                 links = soup.find_all('a', class_=re.compile(f'{platform}|{platform}-icon', re.I))
-            
+
             if links:
                 href = links[0].get('href', '')
                 if href:
                     if not href.startswith(('http://', 'https://')):
                         href = f'https://{href.lstrip("/")}' if 'www.' in href else f'https://www.{href.lstrip("/")}'
                     social_links[platform] = href
-        
+
         return social_links
 
     def extract_locations(self, soup: BeautifulSoup, url: str) -> List[Dict[str, str]]:
         """Extract company locations and contact information"""
         locations = []
-        
+
         # Try to find dedicated contact/location page
         contact_page = None
         contact_links = soup.find_all('a', href=re.compile(r'contact|location|find-us', re.I))
-        
+
         for link in contact_links:
             href = link.get('href')
             if href:
@@ -204,18 +206,18 @@ class UniversalWebScraper:
         # Look for structured address data
         address_elements = target_soup.find_all(['address', 'div', 'p'], 
             class_=re.compile(r'address|location|contact', re.I))
-        
+
         for element in address_elements:
             text = element.get_text().strip()
-            
+
             # Skip if text is too short or contains common false positives
             if len(text) < 10 or any(x in text.lower() for x in ['cookie', 'privacy', 'email us']):
                 continue
-            
+
             # Extract phone number
             phone_match = re.search(r'[\+\(]?[1-9][0-9 .\-\(\)]{8,}[0-9]', text)
             phone = phone_match.group() if phone_match else None
-            
+
             locations.append({
                 "name": "Office",
                 "address": text,
@@ -227,20 +229,20 @@ class UniversalWebScraper:
     def extract_products(self, soup: BeautifulSoup, url: str) -> List[Dict]:
         """Extract products/services information with enhanced detection"""
         products = []
-        
+
         # Try to find products/services section first
         product_sections = soup.find_all(['div', 'section'], 
             class_=re.compile(r'products?|services?|solutions?|offerings?', re.I))
-        
+
         if not product_sections:
             # Fallback to finding individual product cards
             product_sections = [soup]
-        
+
         for section in product_sections:
             # Look for product cards/items
             product_elements = section.find_all(['div', 'article'], 
                 class_=re.compile(r'product|service|item|card|solution', re.I))
-            
+
             for element in product_elements:
                 try:
                     # Extract product name
@@ -249,12 +251,12 @@ class UniversalWebScraper:
                     if not name_elem:
                         continue
                     name = name_elem.get_text().strip()
-                    
+
                     # Extract description
                     desc_elem = element.find(['p', 'div'], 
                         class_=re.compile(r'description|content|text', re.I))
                     description = desc_elem.get_text().strip() if desc_elem else ""
-                    
+
                     # Extract price
                     price_elem = element.find(text=re.compile(r'(\$|USD|EUR|£)\s*\d+', re.I))
                     price = None
@@ -263,7 +265,7 @@ class UniversalWebScraper:
                             price_elem.string)
                         if price_match:
                             price = price_match.group(2)
-                    
+
                     # Extract image
                     img = element.find('img')
                     image_url = None
@@ -271,55 +273,55 @@ class UniversalWebScraper:
                         src = img.get('src', img.get('data-src', ''))
                         if src:
                             image_url = urljoin(url, src)
-                    
+
                     products.append({
                         "name": name,
                         "description": description,
                         "price": price,
                         "image_url": image_url
                     })
-                    
+
                 except Exception as e:
                     continue
-        
+
         return products[:10]  # Limit to 10 products
 
     def extract_images(self, soup: BeautifulSoup, url: str) -> List[str]:
         """Extract relevant images from the website"""
         images = []
         img_tags = soup.find_all('img')
-        
+
         for img in img_tags:
             try:
                 # Get image source
                 src = img.get('src') or img.get('data-src')
                 if not src:
                     continue
-                    
+
                 # Make URL absolute
                 img_url = urljoin(url, src)
-                
+
                 # Skip small images, icons, and logos
                 if any(x in img_url.lower() for x in ['icon', 'logo', 'thumb', 'small']):
                     continue
-                    
+
                 # Skip common file formats for icons
                 if not re.search(r'\.(jpg|jpeg|png|webp)$', img_url.lower()):
                     continue
-                    
+
                 images.append(img_url)
-                
+
             except Exception as e:
                 continue
-        
+
         return list(set(images))[:10]  # Remove duplicates and limit to 10 images
 
 def render_analyzer():
     """Render the analyzer component in Streamlit"""
     initialize_session_state()
-    
+
     st.markdown("## Company Website Analyzer")
-    
+
     # Clean URL input interface at the top
     col1, col2 = st.columns([3, 1])
     with col1:
@@ -339,14 +341,14 @@ def render_analyzer():
         type=['pdf', 'txt', 'png', 'jpg', 'jpeg'],
         help="Supported formats: PDF, Text files, Images"
     )
-    
+
     # Handle URL analysis
     if analyze_button and url_input:
         with st.spinner("Analyzing website content..."):
             try:
                 scraper = UniversalWebScraper()
                 result = scraper.analyze_website(url_input)
-                
+
                 # Save to session state
                 st.session_state.analyzed_data = {
                     'type': 'website',
@@ -354,19 +356,19 @@ def render_analyzer():
                     'data': result.__dict__
                 }
                 st.session_state.analysis_complete = True
-                
+
                 # Show analysis results
                 display_analysis_results(result)
-                
+
                 # Show continue button
                 if st.button("Continue to Chat", type="primary"):
                     st.session_state.show_chat = True
                     st.rerun()
-                
+
             except Exception as e:
                 st.error(f"Error analyzing website: {str(e)}")
                 st.session_state.analysis_complete = False
-    
+
     # Handle file upload analysis
     if uploaded_file is not None:
         try:
@@ -390,7 +392,7 @@ def render_analyzer():
                     'name': uploaded_file.name
                 }
                 st.markdown(f"File uploaded: {uploaded_file.name}")
-            
+
             # Save to session state
             if file_content:
                 st.session_state.analyzed_data = {
@@ -398,61 +400,73 @@ def render_analyzer():
                     'file_info': file_content
                 }
                 st.session_state.analysis_complete = True
-                
+
+                # Show analysis results with generic data
+                display_analysis_results(None)
+
                 # Show continue button
                 if st.button("Continue to Chat", type="primary", key="file_continue"):
                     st.session_state.show_chat = True
                     st.rerun()
-                
+
         except Exception as e:
             st.error(f"Error processing file: {str(e)}")
             st.session_state.analysis_complete = False
 
-def display_analysis_results(result: CompanyInfo):
+def display_analysis_results(result: Optional[CompanyInfo]):
     """Display the analysis results in an organized layout"""
     st.markdown("### Analysis Results")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("### 🏢 Company Information")
-        st.markdown(f"**Name:** {result.name}")
-        st.markdown("**Description:**")
-        st.markdown(result.description)
-    
-    with col2:
-        st.markdown("### 📍 Locations")
-        for location in result.locations:
-            with st.expander(f"Office - {location['address'][:30]}..."):
-                st.markdown(f"**Address:** {location['address']}")
-                if location['phone']:
-                    st.markdown(f"**Phone:** {location['phone']}")
-    
-    # Social Media Section
-    if result.social_links:
-        st.markdown("### 🔗 Social Media Profiles")
-        social_cols = st.columns(len(result.social_links))
-        for idx, (platform, url) in enumerate(result.social_links.items()):
-            with social_cols[idx]:
-                st.markdown(f"[{platform.capitalize()}]({url})")
-    
-    # Products Section
-    if result.products:
-        st.markdown("### 📦 Products/Services")
-        for product in result.products:
-            with st.expander(product['name']):
-                cols = st.columns([2, 1])
-                with cols[0]:
-                    st.markdown(f"**Description:**\n{product['description']}")
-                    if product.get('price'):
-                        st.markdown(f"**Price:** ${product['price']}")
-                
-                with cols[1]:
-                    if product.get('image_url'):
-                        try:
-                            st.image(product['image_url'], use_container_width=True)
-                        except Exception:
-                            st.warning("Unable to load product image")
+
+    if result:  # For website analysis
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("### 🏢 Company Information")
+            st.markdown(f"**Name:** {result.name}")
+            st.markdown("**Description:**")
+            st.markdown(result.description)
+
+        with col2:
+            st.markdown("### 📍 Locations")
+            for location in result.locations:
+                with st.expander(f"Office - {location['address'][:30]}..."):
+                    st.markdown(f"**Address:** {location['address']}")
+                    if location['phone']:
+                        st.markdown(f"**Phone:** {location['phone']}")
+
+        # Social Media Section
+        if result.social_links:
+            st.markdown("### 🔗 Social Media Profiles")
+            social_cols = st.columns(len(result.social_links))
+            for idx, (platform, url) in enumerate(result.social_links.items()):
+                with social_cols[idx]:
+                    st.markdown(f"[{platform.capitalize()}]({url})")
+
+        # Products Section
+        if result.products:
+            st.markdown("### 📦 Products/Services")
+            for product in result.products:
+                with st.expander(product['name']):
+                    cols = st.columns([2, 1])
+                    with cols[0]:
+                        st.markdown(f"**Description:**\n{product['description']}")
+                        if product.get('price'):
+                            st.markdown(f"**Price:** ${product['price']}")
+
+                    with cols[1]:
+                        if product.get('image_url'):
+                            try:
+                                st.image(product['image_url'], use_container_width=True)
+                            except Exception:
+                                st.warning("Unable to load product image")
+
+    # Continue Button - Show for both file and website analysis
+    if st.session_state.analysis_complete:
+        st.markdown("---")
+        if st.button("Continue to Chat", type="primary"):
+            st.session_state.show_chat = True
+            st.session_state.current_page = 'chat'
+            st.experimental_rerun()
 
 if __name__ == "__main__":
     render_analyzer()
