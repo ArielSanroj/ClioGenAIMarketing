@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.geckodriver
     pkgs.tesseract
     pkgs.zlib
     pkgs.tk

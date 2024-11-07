@@ -3,229 +3,250 @@ import requests
 from bs4 import BeautifulSoup
 from PIL import Image
 import re
-from typing import Dict, List
+from typing import Dict, List, Optional
+from urllib.parse import urljoin
+import json
 import io
+from dataclasses import dataclass
 
-def extract_company_info(url: str) -> Dict:
-    """Extract detailed company information from website"""
-    try:
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Extract About Us information
-        about_info = extract_about_info(soup, url)
-        
-        # Extract Locations
-        locations = extract_locations(soup, url)
-        
-        # Extract Social Media
-        social_media = extract_social_media(soup)
-        
-        # Extract Products/Services
-        products = extract_products(soup, url)
-        
-        return {
-            "background": about_info.get("background", "Not found"),
-            "mission": about_info.get("mission", "Not found"),
-            "values": about_info.get("values", []),
-            "locations": locations,
-            "socialMedia": social_media,
-            "products": products
-        }
-    except Exception as e:
-        raise Exception(f"Error analyzing website: {str(e)}")
+@dataclass
+class CompanyInfo:
+    """Data structure for company information"""
+    name: str
+    description: str
+    social_links: Dict[str, str]
+    locations: List[Dict[str, str]]
+    products: List[Dict]
+    images: List[str]
 
-def extract_about_info(soup: BeautifulSoup, base_url: str) -> Dict:
-    """Extract About Us information"""
-    about_link = soup.find('a', text=re.compile(r'about', re.I))
+class UniversalWebScraper:
+    """Universal web scraper with comprehensive data extraction capabilities"""
     
-    if about_link:
-        about_url = about_link.get('href')
-        if not about_url.startswith('http'):
-            about_url = base_url.rstrip('/') + '/' + about_url.lstrip('/')
-        
+    def analyze_website(self, url: str) -> CompanyInfo:
+        """Main function to analyze company website"""
         try:
-            about_response = requests.get(about_url)
-            about_soup = BeautifulSoup(about_response.text, 'html.parser')
-        except:
-            about_soup = soup
-    else:
-        about_soup = soup
-
-    background = ""
-    mission = ""
-    values = []
-
-    # Look for relevant sections
-    for tag in about_soup.find_all(['h1', 'h2', 'h3', 'h4', 'p']):
-        text = tag.get_text().strip().lower()
-        if any(keyword in text for keyword in ['about us', 'our story', 'who we are']):
-            background = tag.find_next('p').get_text().strip()
-        elif any(keyword in text for keyword in ['mission', 'our purpose']):
-            mission = tag.find_next('p').get_text().strip()
-        elif any(keyword in text for keyword in ['values', 'principles']):
-            values_list = tag.find_next('ul')
-            if values_list:
-                values = [li.get_text().strip() for li in values_list.find_all('li')]
-
-    return {
-        "background": background,
-        "mission": mission,
-        "values": values
-    }
-
-def extract_locations(soup: BeautifulSoup, base_url: str) -> List[Dict]:
-    """Extract company locations"""
-    locations = []
-    contact_link = soup.find('a', text=re.compile(r'contact|location', re.I))
-    
-    if contact_link:
-        contact_url = contact_link.get('href')
-        if not contact_url.startswith('http'):
-            contact_url = base_url.rstrip('/') + '/' + contact_url.lstrip('/')
-        
-        try:
-            contact_response = requests.get(contact_url)
-            contact_soup = BeautifulSoup(contact_response.text, 'html.parser')
-        except:
-            contact_soup = soup
-    else:
-        contact_soup = soup
-
-    # Look for address patterns
-    address_pattern = re.compile(r'\d+\s+[A-Za-z]+\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Suite|Ste).*')
-    for tag in contact_soup.find_all(['p', 'div', 'address']):
-        text = tag.get_text().strip()
-        if address_pattern.search(text):
-            # Look for phone number
-            phone_pattern = re.compile(r'[\+\(]?[1-9][0-9 .\-\(\)]{8,}[0-9]')
-            phone = phone_pattern.search(text)
+            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+            soup = BeautifulSoup(response.text, 'html.parser')
             
-            locations.append({
-                "name": "Office",
-                "address": text,
-                "phone": phone.group() if phone else None
-            })
-    
-    return locations
+            return CompanyInfo(
+                name=self.extract_company_name(soup, url),
+                description=self.extract_company_description(soup),
+                social_links=self.extract_social_links(soup),
+                locations=self.extract_locations(soup, url),
+                products=self.extract_products(soup, url),
+                images=self.extract_images(soup, url)
+            )
+        except Exception as e:
+            st.error(f"Error analyzing website: {str(e)}")
+            raise
 
-def extract_social_media(soup: BeautifulSoup) -> List[Dict]:
-    """Extract social media profiles"""
-    social_platforms = {
-        'facebook': r'facebook\.com',
-        'twitter': r'twitter\.com|x\.com',
-        'linkedin': r'linkedin\.com',
-        'instagram': r'instagram\.com',
-        'youtube': r'youtube\.com'
-    }
-    
-    social_media = []
-    for platform, pattern in social_platforms.items():
-        links = soup.find_all('a', href=re.compile(pattern))
-        for link in links:
-            social_media.append({
-                "platform": platform.capitalize(),
-                "url": link['href']
-            })
-    
-    return social_media
+    def extract_company_name(self, soup: BeautifulSoup, url: str) -> str:
+        """Extract company name using multiple fallback methods"""
+        possible_elements = [
+            soup.find('meta', property='og:site_name'),
+            soup.find('meta', property='og:title'),
+            soup.find(['h1', 'h2'], class_=re.compile(r'logo|brand|company|header', re.I)),
+            soup.find('title')
+        ]
+        
+        for element in possible_elements:
+            if element:
+                name = element.get('content', element.text)
+                if name and len(name) > 1:
+                    return name.strip()
+        
+        return url.split('/')[2].replace('www.', '').split('.')[0].capitalize()
 
-def extract_products(soup: BeautifulSoup, base_url: str) -> List[Dict]:
-    """Extract products/services information"""
-    products = []
-    products_link = soup.find('a', text=re.compile(r'products?|services?', re.I))
-    
-    if products_link:
-        products_url = products_link.get('href')
-        if not products_url.startswith('http'):
-            products_url = base_url.rstrip('/') + '/' + products_url.lstrip('/')
+    def extract_company_description(self, soup: BeautifulSoup) -> str:
+        """Extract company description from various locations"""
+        possible_elements = [
+            soup.find('meta', {'name': 'description'}),
+            soup.find('meta', property='og:description'),
+            soup.find(class_=re.compile(r'about|description|company-info', re.I)),
+            soup.find(['p', 'div'], class_=re.compile(r'intro|summary|mission', re.I))
+        ]
         
-        try:
-            products_response = requests.get(products_url)
-            products_soup = BeautifulSoup(products_response.text, 'html.parser')
-        except:
-            products_soup = soup
-    else:
-        products_soup = soup
+        for element in possible_elements:
+            if element:
+                desc = element.get('content', element.text)
+                if desc and len(desc) > 10:
+                    return desc.strip()
+        
+        return "Description not found"
 
-    # Look for product elements
-    product_elements = products_soup.find_all(class_=re.compile(r'product|service|item'))
-    
-    for element in product_elements[:5]:  # Limit to 5 products
-        name = element.find(['h2', 'h3', 'h4'])
-        name = name.get_text().strip() if name else "Unknown Product"
+    def extract_social_links(self, soup: BeautifulSoup) -> Dict[str, str]:
+        """Extract social media links"""
+        social_platforms = {
+            'facebook': r'facebook\.com',
+            'twitter': r'twitter\.com|x\.com',
+            'linkedin': r'linkedin\.com',
+            'instagram': r'instagram\.com',
+            'youtube': r'youtube\.com'
+        }
         
-        description = element.find(['p', 'div'], class_=re.compile(r'description|details'))
-        description = description.get_text().strip() if description else ""
+        social_links = {}
+        for platform, pattern in social_platforms.items():
+            links = soup.find_all('a', href=re.compile(pattern))
+            if links:
+                social_links[platform] = links[0]['href']
         
-        price_element = element.find(text=re.compile(r'\$\d+\.?\d*'))
-        price = float(re.search(r'\$(\d+\.?\d*)', price_element).group(1)) if price_element else None
-        
-        image = element.find('img')
-        image_url = image['src'] if image else None
-        if image_url and not image_url.startswith('http'):
-            image_url = base_url.rstrip('/') + '/' + image_url.lstrip('/')
+        return social_links
 
-        products.append({
-            "name": name,
-            "description": description,
-            "price": price,
-            "image": image_url
-        })
-    
-    return products
+    def extract_locations(self, soup: BeautifulSoup, url: str) -> List[Dict[str, str]]:
+        """Extract company locations and contact information"""
+        locations = []
+        
+        # Try to find contact/location page
+        contact_link = soup.find('a', text=re.compile(r'contact|location', re.I))
+        if contact_link:
+            contact_url = contact_link.get('href')
+            if not contact_url.startswith('http'):
+                contact_url = urljoin(url, contact_url)
+            try:
+                response = requests.get(contact_url, headers={'User-Agent': 'Mozilla/5.0'})
+                soup = BeautifulSoup(response.text, 'html.parser')
+            except:
+                pass
+
+        # Look for address patterns
+        address_pattern = re.compile(r'\d+\s+[A-Za-z]+\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Suite|Ste).*')
+        phone_pattern = re.compile(r'[\+\(]?[1-9][0-9 .\-\(\)]{8,}[0-9]')
+        
+        for tag in soup.find_all(['p', 'div', 'address']):
+            text = tag.get_text().strip()
+            if address_pattern.search(text):
+                phone = phone_pattern.search(text)
+                locations.append({
+                    "name": "Office",
+                    "address": text,
+                    "phone": phone.group() if phone else None
+                })
+        
+        return locations
+
+    def extract_products(self, soup: BeautifulSoup, url: str) -> List[Dict]:
+        """Extract products/services information"""
+        products = []
+        
+        # Try to find products page
+        products_link = soup.find('a', text=re.compile(r'products?|services?', re.I))
+        if products_link:
+            products_url = products_link.get('href')
+            if not products_url.startswith('http'):
+                products_url = urljoin(url, products_url)
+            try:
+                response = requests.get(products_url, headers={'User-Agent': 'Mozilla/5.0'})
+                soup = BeautifulSoup(response.text, 'html.parser')
+            except:
+                pass
+
+        # Look for product elements
+        product_elements = soup.find_all(class_=re.compile(r'product|service|item', re.I))
+        
+        for element in product_elements[:5]:  # Limit to 5 products
+            try:
+                name = element.find(['h2', 'h3', 'h4'])
+                name = name.get_text().strip() if name else "Unknown Product"
+                
+                description = element.find(['p', 'div'], class_=re.compile(r'description|details', re.I))
+                description = description.get_text().strip() if description else ""
+                
+                price_element = element.find(text=re.compile(r'\$\d+\.?\d*'))
+                price = re.search(r'\$(\d+\.?\d*)', price_element).group(1) if price_element else None
+                
+                image = element.find('img')
+                image_url = image['src'] if image else None
+                if image_url and not image_url.startswith('http'):
+                    image_url = urljoin(url, image_url)
+
+                products.append({
+                    "name": name,
+                    "description": description,
+                    "price": price,
+                    "image_url": image_url
+                })
+            except Exception as e:
+                continue
+        
+        return products
+
+    def extract_images(self, soup: BeautifulSoup, url: str) -> List[str]:
+        """Extract relevant images"""
+        images = []
+        for img in soup.find_all('img'):
+            src = img.get('src') or img.get('data-src')
+            if src:
+                if not re.search(r'icon|logo|small', src, re.I):
+                    full_url = urljoin(url, src)
+                    images.append(full_url)
+        return images[:10]  # Limit to 10 images
 
 def render_analyzer():
-    st.markdown("## Company Analyzer")
+    """Render the analyzer component in Streamlit"""
+    st.markdown("## Company Website Analyzer")
     
     # URL Analysis Section
-    st.markdown("### Analyze Website Content")
-    url_input = st.text_input("Enter company website URL", placeholder="https://example.com")
+    url_input = st.text_input(
+        "Enter company website URL",
+        placeholder="https://example.com",
+        help="Enter the URL of the company website you want to analyze"
+    )
     
     if st.button("Analyze Website", key="analyze_website"):
         if url_input:
             with st.spinner("Analyzing website content..."):
                 try:
-                    result = extract_company_info(url_input)
+                    scraper = UniversalWebScraper()
+                    result = scraper.analyze_website(url_input)
                     
-                    # Display results in organized sections with icons
+                    # Display results in organized sections
                     col1, col2 = st.columns(2)
                     
                     with col1:
-                        st.markdown("#### 🌐 Company Background")
-                        st.markdown(f"**Background:**\n{result['background']}")
-                        st.markdown(f"**Mission:**\n{result['mission']}")
-                        if result['values']:
-                            st.markdown("**Values:**")
-                            for value in result['values']:
-                                st.markdown(f"- {value}")
+                        st.markdown("### 🏢 Company Information")
+                        st.markdown(f"**Name:** {result.name}")
+                        st.markdown("**Description:**")
+                        st.markdown(result.description)
                     
                     with col2:
-                        st.markdown("#### 📍 Locations")
-                        for location in result['locations']:
-                            st.markdown(f"**{location['name']}**")
-                            st.markdown(f"Address: {location['address']}")
-                            if location['phone']:
-                                st.markdown(f"Phone: {location['phone']}")
-                            st.markdown("---")
+                        st.markdown("### 📍 Locations")
+                        for location in result.locations:
+                            with st.expander(f"Office - {location['address'][:30]}..."):
+                                st.markdown(f"**Address:** {location['address']}")
+                                if location['phone']:
+                                    st.markdown(f"**Phone:** {location['phone']}")
                     
-                    st.markdown("#### 🔗 Social Media Profiles")
-                    social_cols = st.columns(len(result['socialMedia']) if result['socialMedia'] else 1)
-                    for idx, social in enumerate(result['socialMedia']):
+                    # Social Media Section
+                    st.markdown("### 🔗 Social Media Profiles")
+                    social_cols = st.columns(len(result.social_links) if result.social_links else 1)
+                    for idx, (platform, url) in enumerate(result.social_links.items()):
                         with social_cols[idx]:
-                            st.markdown(f"[{social['platform']}]({social['url']})")
+                            st.markdown(f"[{platform.capitalize()}]({url})")
                     
-                    st.markdown("#### 📦 Products/Services")
-                    for product in result['products']:
-                        with st.expander(product['name']):
-                            if product['image']:
-                                st.image(product['image'], width=200)
-                            st.markdown(product['description'])
-                            if product['price']:
-                                st.markdown(f"**Price:** ${product['price']}")
-                
+                    # Products Section
+                    if result.products:
+                        st.markdown("### 📦 Products/Services")
+                        for product in result.products:
+                            with st.expander(product['name']):
+                                if product['image_url']:
+                                    st.image(product['image_url'], width=200)
+                                st.markdown(product['description'])
+                                if product['price']:
+                                    st.markdown(f"**Price:** ${product['price']}")
+                    
+                    # Images Section
+                    if result.images:
+                        st.markdown("### 📸 Company Images")
+                        image_cols = st.columns(3)
+                        for idx, image_url in enumerate(result.images):
+                            with image_cols[idx % 3]:
+                                try:
+                                    st.image(image_url, use_column_width=True)
+                                except:
+                                    continue
+                    
                 except Exception as e:
-                    st.error(f"Error: {str(e)}")
+                    st.error(f"Error analyzing website: {str(e)}")
         else:
             st.warning("Please enter a URL to analyze")
     
@@ -241,13 +262,11 @@ def render_analyzer():
         try:
             if uploaded_file.type.startswith('image'):
                 st.image(uploaded_file, caption="Uploaded Image")
-                # Add image analysis logic here
             elif uploaded_file.type == 'text/plain':
                 content = uploaded_file.getvalue().decode('utf-8')
                 st.text_area("File Content", content, height=200)
-            elif uploaded_file.type == 'application/pdf':
-                st.markdown(f"PDF file uploaded: {uploaded_file.name}")
-                # Add PDF analysis logic here
+            else:
+                st.markdown(f"File uploaded: {uploaded_file.name}")
         except Exception as e:
             st.error(f"Error processing file: {str(e)}")
 
