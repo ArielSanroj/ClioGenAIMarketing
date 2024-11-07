@@ -1,3 +1,11 @@
+import os
+import sys
+
+# Add project root to Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
 import streamlit as st
 from components.sidebar import render_sidebar
 from components.content_generator import render_content_generator
@@ -116,6 +124,8 @@ def main():
         st.session_state.current_page = 'analyzer'
     if 'analyzed_data' not in st.session_state:
         st.session_state.analyzed_data = True  # Default value for demonstration purposes
+    if 'analysis_complete' not in st.session_state:
+        st.session_state.analysis_complete = False
             
     # Render sidebar
     selected_sidebar_option = render_sidebar()

@@ -360,7 +360,7 @@ def display_analysis_results(result: Optional[CompanyInfo]):
             if st.button("Continue to Chat", type="primary", use_container_width=True):
                 st.session_state.show_chat = True
                 st.session_state.current_page = 'chat'
-                st.switch_page("main.py")  # Use st.switch_page instead of rerun
+                st.switch_page("pages/main")  # Direct path to main.py in pages directory
 
 def render_analyzer():
     """Render the analyzer component in Streamlit"""
