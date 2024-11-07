@@ -12,18 +12,6 @@ from marketing_campaign_system import (
     MarketingGoal
 )
 
-# Initialize session state
-if 'content_form' not in st.session_state:
-    st.session_state.content_form = {
-        'business_name': '',
-        'business_description': '',
-        'analysis': None,
-        'generated_content': None,
-        'selected_type': 'Blog Post',
-        'content_options': {},
-        'selected_tone': 'Professional'
-    }
-
 class EnhancedContentGenerator:
     def __init__(self):
         self.campaign = ContentMarketingCampaign("Dynamic Campaign")
@@ -45,20 +33,19 @@ class EnhancedContentGenerator:
         analysis = generate_marketing_content(prompt, "business_analysis")
         return analysis
 
-def handle_business_info_update():
-    """Handle business information updates"""
-    st.session_state.content_form['business_name'] = st.session_state.business_name_input
-    st.session_state.content_form['business_description'] = st.session_state.business_description_input
-
-def handle_content_type_update():
-    """Handle content type selection update"""
-    st.session_state.content_form['selected_type'] = st.session_state.content_type_input
-
-def handle_tone_update():
-    """Handle tone selection update"""
-    st.session_state.content_form['selected_tone'] = st.session_state.tone_input
-
 def render_content_generator():
+    # Initialize session state if not already done
+    if 'content_form' not in st.session_state:
+        st.session_state.content_form = {
+            'business_name': '',
+            'business_description': '',
+            'selected_type': 'Blog Post',
+            'content_options': {},
+            'selected_tone': 'Professional',
+            'analysis': None,
+            'generated_content': None
+        }
+    
     st.markdown("## AI-Powered Content Marketing Generator")
     
     # Initialize generator
@@ -69,28 +56,27 @@ def render_content_generator():
     
     with col1:
         st.subheader("Business Information")
-        st.text_input(
+        business_name = st.text_input(
             "Business Name",
+            key='business_name',
             value=st.session_state.content_form['business_name'],
-            key='business_name_input',
-            on_change=handle_business_info_update,
             help="Enter your business name"
         )
+        st.session_state.content_form['business_name'] = business_name
         
-        st.text_area(
+        business_description = st.text_area(
             "Business Description",
+            key='business_description',
             value=st.session_state.content_form['business_description'],
             height=150,
-            key='business_description_input',
-            on_change=handle_business_info_update,
             help="Describe your business, products/services, and target market"
         )
+        st.session_state.content_form['business_description'] = business_description
         
         # Analyze button with proper validation
         analyze_clicked = st.button(
             "Analyze Business Context",
-            disabled=not (st.session_state.content_form['business_name'] and 
-                        st.session_state.content_form['business_description']),
+            disabled=not (business_name and business_description),
             key='analyze_button',
             type="primary"
         )
@@ -98,10 +84,7 @@ def render_content_generator():
         if analyze_clicked:
             with st.spinner("Analyzing business context..."):
                 try:
-                    analysis = generator.analyze_business_context(
-                        st.session_state.content_form['business_name'],
-                        st.session_state.content_form['business_description']
-                    )
+                    analysis = generator.analyze_business_context(business_name, business_description)
                     st.session_state.content_form['analysis'] = analysis
                     
                     st.success("Analysis completed successfully!")
@@ -153,58 +136,25 @@ def render_content_generator():
         selected_type = st.selectbox(
             "Content Type",
             list(content_types.keys()),
-            key='content_type_input',
-            index=list(content_types.keys()).index(st.session_state.content_form['selected_type']),
-            on_change=handle_content_type_update,
-            help="Select the type of content you want to generate"
+            key='content_type',
+            index=list(content_types.keys()).index(st.session_state.content_form['selected_type'])
         )
+        st.session_state.content_form['selected_type'] = selected_type
         
         # Dynamic options based on content type
         content_options = {}
         if selected_type == "Blog Post":
-            content_options['format_type'] = st.selectbox(
-                "Format",
-                content_types[selected_type]["formats"],
-                key='format_type_input'
-            )
-            content_options['length'] = st.selectbox(
-                "Length",
-                content_types[selected_type]["lengths"],
-                key='length_input'
-            )
+            content_options['format_type'] = st.selectbox("Format", content_types[selected_type]["formats"], key='format_type')
+            content_options['length'] = st.selectbox("Length", content_types[selected_type]["lengths"], key='length')
         elif selected_type == "Social Media Post":
-            content_options['platform'] = st.selectbox(
-                "Platform",
-                content_types[selected_type]["platforms"],
-                key='platform_input'
-            )
-            content_options['format_type'] = st.selectbox(
-                "Format",
-                content_types[selected_type]["formats"],
-                key='format_type_input'
-            )
+            content_options['platform'] = st.selectbox("Platform", content_types[selected_type]["platforms"], key='platform')
+            content_options['format_type'] = st.selectbox("Format", content_types[selected_type]["formats"], key='format')
         elif selected_type == "Email Newsletter":
-            content_options['email_type'] = st.selectbox(
-                "Newsletter Type",
-                content_types[selected_type]["types"],
-                key='email_type_input'
-            )
-            content_options['length'] = st.selectbox(
-                "Length",
-                content_types[selected_type]["lengths"],
-                key='length_input'
-            )
+            content_options['email_type'] = st.selectbox("Newsletter Type", content_types[selected_type]["types"], key='email_type')
+            content_options['length'] = st.selectbox("Length", content_types[selected_type]["lengths"], key='newsletter_length')
         else:
-            content_options['purpose'] = st.selectbox(
-                "Purpose",
-                content_types[selected_type]["purposes"],
-                key='purpose_input'
-            )
-            content_options['style'] = st.selectbox(
-                "Style",
-                content_types[selected_type]["styles"],
-                key='style_input'
-            )
+            content_options['purpose'] = st.selectbox("Purpose", content_types[selected_type]["purposes"], key='purpose')
+            content_options['style'] = st.selectbox("Style", content_types[selected_type]["styles"], key='style')
         
         st.session_state.content_form['content_options'] = content_options
         
@@ -215,19 +165,17 @@ def render_content_generator():
             selected_tone = st.selectbox(
                 "Content Tone",
                 tone_options,
-                key='tone_input',
-                index=tone_options.index(suggested_tone) if suggested_tone in tone_options else 0,
-                on_change=handle_tone_update,
-                help="Select the tone for your content"
+                key='tone',
+                index=tone_options.index(suggested_tone) if suggested_tone in tone_options else 0
             )
         else:
             selected_tone = st.selectbox(
                 "Content Tone",
                 tone_options,
-                key='tone_input',
-                index=tone_options.index(st.session_state.content_form['selected_tone']),
-                on_change=handle_tone_update
+                key='tone',
+                index=tone_options.index(st.session_state.content_form['selected_tone'])
             )
+        st.session_state.content_form['selected_tone'] = selected_tone
     
     # Generate Content Button
     generate_clicked = st.button(
@@ -241,8 +189,8 @@ def render_content_generator():
         with st.spinner("Generating optimized content..."):
             try:
                 prompt = f"""
-                Business Name: {st.session_state.content_form['business_name']}
-                Business Description: {st.session_state.content_form['business_description']}
+                Business Name: {business_name}
+                Business Description: {business_description}
                 Content Type: {selected_type}
                 Tone: {selected_tone}
                 
@@ -287,7 +235,7 @@ def render_content_generator():
                         st.download_button(
                             "Export Content",
                             content.content_body,
-                            file_name=f"{st.session_state.content_form['business_name']}_{selected_type}.txt",
+                            file_name=f"{business_name}_{selected_type}.txt",
                             mime="text/plain",
                             key="export_button"
                         )
@@ -296,7 +244,7 @@ def render_content_generator():
                             generator.campaign.content_pieces.append(content)
                             # Save to database
                             db.save_campaign(
-                                business_name=st.session_state.content_form['business_name'],
+                                business_name=business_name,
                                 campaign_type=selected_type,
                                 content=content.content_body
                             )
