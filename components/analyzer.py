@@ -423,7 +423,7 @@ def display_analysis_results(result: Optional[CompanyInfo]):
             st.markdown("### 📦 Products/Services")
             for product in result.products:
                 with st.expander(product['name']):
-                    cols = st.columns([2, 1])
+                    cols = st.columns(2)
                     with cols[0]:
                         st.markdown(f"**Description:**\n{product['description']}")
                         if product.get('price'):
