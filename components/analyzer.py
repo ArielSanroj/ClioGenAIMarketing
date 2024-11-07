@@ -302,93 +302,6 @@ class UniversalWebScraper:
         
         return list(set(images))[:10]  # Remove duplicates and limit to 10 images
 
-def render_analyzer():
-    """Render the analyzer component in Streamlit"""
-    initialize_session_state()
-    
-    st.markdown("## Company Website Analyzer")
-    
-    # Clean URL input interface at the top
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        url_input = st.text_input(
-            "Enter company website URL",
-            placeholder="https://example.com",
-            help="Enter the URL of the company website you want to analyze",
-            key="url_input"
-        )
-    with col2:
-        analyze_button = st.button("Analyze Website", use_container_width=True)
-    
-    # File upload section below
-    st.markdown("### 📤 Upload Company Documents")
-    uploaded_file = st.file_uploader(
-        "Upload documents for analysis",
-        type=['pdf', 'txt', 'png', 'jpg', 'jpeg'],
-        help="Supported formats: PDF, Text files, Images"
-    )
-    
-    # Handle URL analysis
-    if analyze_button and url_input:
-        with st.spinner("Analyzing website content..."):
-            try:
-                scraper = UniversalWebScraper()
-                result = scraper.analyze_website(url_input)
-                
-                # Save to session state
-                st.session_state.analyzed_data = {
-                    'type': 'website',
-                    'url': url_input,
-                    'data': result.__dict__
-                }
-                st.session_state.analysis_complete = True
-                
-                # Show analysis results
-                display_analysis_results(result)
-                
-            except Exception as e:
-                st.error(f"Error analyzing website: {str(e)}")
-                st.session_state.analysis_complete = False
-    
-    # Handle file upload analysis
-    if uploaded_file is not None:
-        try:
-            file_content = None
-            if uploaded_file.type.startswith('image'):
-                file_content = {
-                    'type': 'image',
-                    'content': uploaded_file
-                }
-                st.image(uploaded_file, caption="Uploaded Image")
-            elif uploaded_file.type == 'text/plain':
-                content = uploaded_file.getvalue().decode('utf-8')
-                file_content = {
-                    'type': 'text',
-                    'content': content
-                }
-                st.text_area("File Content", content, height=200)
-            else:
-                file_content = {
-                    'type': uploaded_file.type,
-                    'name': uploaded_file.name
-                }
-                st.markdown(f"File uploaded: {uploaded_file.name}")
-            
-            # Save to session state
-            if file_content:
-                st.session_state.analyzed_data = {
-                    'type': 'file',
-                    'file_info': file_content
-                }
-                st.session_state.analysis_complete = True
-                
-                # Show analysis results with generic data
-                display_analysis_results(None)
-                
-        except Exception as e:
-            st.error(f"Error processing file: {str(e)}")
-            st.session_state.analysis_complete = False
-
 def display_analysis_results(result: Optional[CompanyInfo]):
     """Display the analysis results in an organized layout"""
     st.markdown("### Analysis Results")
@@ -447,5 +360,45 @@ def display_analysis_results(result: Optional[CompanyInfo]):
                 st.session_state.current_page = 'chat'
                 st.switch_page("main.py")  # Use st.switch_page instead of rerun
 
+def render_analyzer():
+    """Render the analyzer component in Streamlit"""
+    initialize_session_state()
+    
+    st.markdown("## Company Website Analyzer")
+    
+    # Clean URL input interface at the top
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        url_input = st.text_input(
+            "Enter company website URL",
+            placeholder="https://example.com",
+            help="Enter the URL of the company website you want to analyze",
+            key="url_input"
+        )
+    with col2:
+        analyze_button = st.button("Analyze Website", use_container_width=True)
+
+    # Handle URL analysis
+    if analyze_button and url_input:
+        with st.spinner("Analyzing website content..."):
+            try:
+                scraper = UniversalWebScraper()
+                result = scraper.analyze_website(url_input)
+                
+                # Save to session state
+                st.session_state.analyzed_data = {
+                    'type': 'website',
+                    'url': url_input,
+                    'data': result.__dict__
+                }
+                st.session_state.analysis_complete = True
+                
+                # Show analysis results
+                display_analysis_results(result)
+                
+            except Exception as e:
+                st.error(f"Error analyzing website: {str(e)}")
+                st.session_state.analysis_complete = False
+    
 if __name__ == "__main__":
     render_analyzer()

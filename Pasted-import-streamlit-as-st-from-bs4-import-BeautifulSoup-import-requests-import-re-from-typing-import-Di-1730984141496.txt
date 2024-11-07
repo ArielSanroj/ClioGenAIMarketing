@@ -1,0 +1,130 @@
+import streamlit as st
+from bs4 import BeautifulSoup
+import requests
+import re
+from typing import Dict, List, Optional
+from urllib.parse import urljoin
+from dataclasses import dataclass
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+
+@dataclass
+class CompanyInfo:
+    """Data structure for company information"""
+    name: str
+    description: str
+    social_links: Dict[str, str]
+    locations: List[Dict[str, str]]
+    products: List[Dict]
+    images: List[str]
+
+class UniversalWebScraper:
+    # Keep all your existing UniversalWebScraper code here
+    # (The scraper implementation remains the same)
+    pass
+
+def initialize_session_state():
+    """Initialize session state variables"""
+    if 'analyzed_data' not in st.session_state:
+        st.session_state.analyzed_data = None
+    if 'show_chat' not in st.session_state:
+        st.session_state.show_chat = False
+    if 'analysis_complete' not in st.session_state:
+        st.session_state.analysis_complete = False
+
+def display_analysis_results(result: Optional[CompanyInfo]):
+    """Display the analysis results in an organized layout"""
+    st.markdown("### Analysis Results")
+    
+    if result:  # For website analysis
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 🏢 Company Information")
+            st.markdown(f"**Name:** {result.name}")
+            st.markdown("**Description:**")
+            st.markdown(result.description)
+        
+        with col2:
+            st.markdown("### 📍 Locations")
+            for location in result.locations:
+                with st.expander(f"Office - {location['address'][:30]}..."):
+                    st.markdown(f"**Address:** {location['address']}")
+                    if location['phone']:
+                        st.markdown(f"**Phone:** {location['phone']}")
+        
+        # Social Media Section
+        if result.social_links:
+            st.markdown("### 🔗 Social Media Profiles")
+            social_cols = st.columns(len(result.social_links))
+            for idx, (platform, url) in enumerate(result.social_links.items()):
+                with social_cols[idx]:
+                    st.markdown(f"[{platform.capitalize()}]({url})")
+        
+        # Products Section
+        if result.products:
+            st.markdown("### 📦 Products/Services")
+            for product in result.products:
+                with st.expander(product['name']):
+                    cols = st.columns(2)
+                    with cols[0]:
+                        st.markdown(f"**Description:**\n{product['description']}")
+                        if product.get('price'):
+                            st.markdown(f"**Price:** ${product['price']}")
+                    
+                    with cols[1]:
+                        if product.get('image_url'):
+                            try:
+                                st.image(product['image_url'], use_container_width=True)
+                            except:
+                                st.warning("Unable to load product image")
+
+def render_analyzer():
+    """Render the analyzer component in Streamlit"""
+    initialize_session_state()
+    
+    st.markdown("## Company Website Analyzer")
+    
+    # URL input interface
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        url_input = st.text_input(
+            "Enter company website URL",
+            placeholder="https://example.com",
+            help="Enter the URL of the company website you want to analyze",
+            key="url_input"
+        )
+    with col2:
+        analyze_button = st.button("Analyze Website", use_container_width=True)
+    
+    # Handle URL analysis
+    if analyze_button and url_input:
+        with st.spinner("Analyzing website content..."):
+            try:
+                scraper = UniversalWebScraper()
+                result = scraper.analyze_website(url_input)
+                
+                # Save to session state
+                st.session_state.analyzed_data = {
+                    'type': 'website',
+                    'url': url_input,
+                    'data': result.__dict__
+                }
+                st.session_state.analysis_complete = True
+                
+                # Show analysis results
+                display_analysis_results(result)
+                
+                # Show continue button
+                _, col2, _ = st.columns([1, 2, 1])
+                with col2:
+                    if st.button("Continue to Chat", type="primary", use_container_width=True):
+                        st.session_state.show_chat = True
+                        st.rerun()
+                
+            except Exception as e:
+                st.error(f"Error analyzing website: {str(e)}")
+                st.session_state.analysis_complete = False
+
+if __name__ == "__main__":
+    render_analyzer()
