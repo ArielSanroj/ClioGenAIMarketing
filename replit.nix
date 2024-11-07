@@ -1,5 +1,6 @@
 {pkgs}: {
   deps = [
+    pkgs.tesseract
     pkgs.zlib
     pkgs.tk
     pkgs.tcl

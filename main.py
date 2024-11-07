@@ -4,6 +4,7 @@ from components.content_generator import render_content_generator
 from components.social_media import render_social_media_campaign
 from components.audience_analyzer import render_audience_analyzer
 from components.seo_analyzer import render_seo_analyzer
+from components.analyzer import render_analyzer
 from styles import apply_custom_styles
 from database import db
 
@@ -66,6 +67,11 @@ def main():
     
     with main_container:
         st.title("AI Marketing Assistant")
+        
+        # Add analyzer component above action buttons
+        render_analyzer()
+        
+        st.markdown("---")  # Add separator
         
         # Navigation buttons
         col1, col2, col3, col4 = st.columns(4)
