@@ -6,7 +6,6 @@ from components.audience_analyzer import render_audience_analyzer
 from components.seo_analyzer import render_seo_analyzer
 from components.analyzer import render_analyzer
 from styles import apply_custom_styles
-from database import db
 
 def render_chat_input():
     st.markdown("""
@@ -50,6 +49,37 @@ def render_chat_input():
         </script>
     """, unsafe_allow_html=True)
 
+def render_chat_interface():
+    """Render the chat interface with suggested actions based on analyzed data"""
+    st.markdown("### 💬 Chat with Clio AI")
+    
+    # Display suggested actions based on analyzed data
+    if st.session_state.analyzed_data:
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            if st.button("Generate Content Marketing", key="chat_content"):
+                st.session_state.selected_option = "content"
+                st.rerun()
+        
+        with col2:
+            if st.button("Create Social Media Campaign", key="chat_social"):
+                st.session_state.selected_option = "social"
+                st.rerun()
+        
+        with col3:
+            if st.button("Analyze Target Audience", key="chat_audience"):
+                st.session_state.selected_option = "audience"
+                st.rerun()
+        
+        with col4:
+            if st.button("Generate SEO recommendations", key="chat_seo"):
+                st.session_state.selected_option = "seo"
+                st.rerun()
+    
+    # Chat input
+    render_chat_input()
+
 def main():
     st.set_page_config(
         page_title="AI Marketing Assistant",
@@ -59,62 +89,45 @@ def main():
     
     apply_custom_styles()
     
+    # Initialize session state
+    if 'selected_option' not in st.session_state:
+        st.session_state.selected_option = None
+        
+    if 'analyzed_data' not in st.session_state:
+        st.session_state.analyzed_data = True  # Default value for demonstration purposes
+        
     # Render sidebar
-    selected_option = render_sidebar()
+    selected_sidebar_option = render_sidebar()
+    if selected_sidebar_option:
+        st.session_state.selected_option = selected_sidebar_option
     
-    # Add container for main content to add proper spacing for chat input
+    # Main content area with proper spacing for chat input
     main_container = st.container()
     
     with main_container:
         st.title("AI Marketing Assistant")
         
-        # Add analyzer component above action buttons
-        render_analyzer()
+        # Show analyzer component initially
+        if not st.session_state.get('show_chat', False):
+            render_analyzer()
         
-        st.markdown("---")  # Add separator
-        
-        # Navigation buttons
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            if st.button("Generate Content Marketing"):
-                selected_option = "content"
-        with col2:
-            if st.button("Create Social Media Campaign"):
-                selected_option = "social"
-        with col3:
-            if st.button("Analyze Target Audience"):
-                selected_option = "audience"
-        with col4:
-            if st.button("Generate SEO recommendations"):
-                selected_option = "seo"
-        
-        # Render selected component
-        if selected_option == "content":
-            render_content_generator()
-        elif selected_option == "social":
-            render_social_media_campaign()
-        elif selected_option == "audience":
-            render_audience_analyzer()
-        elif selected_option == "seo":
-            render_seo_analyzer()
-        else:
-            # Default view - Quick start guide
-            st.markdown("""
-            ## 👋 Welcome to Clio AI Marketing Assistant!
+        # Show chat interface after analysis
+        if st.session_state.get('show_chat', False):
+            render_chat_interface()
             
-            Get started by selecting one of the following options:
-            
-            1. **Generate Content Marketing** - Create engaging blog posts, social media content, and more
-            2. **Create Social Media Campaign** - Design comprehensive social media campaigns
-            3. **Analyze Target Audience** - Get insights about your target market
-            4. **Generate SEO Recommendations** - Optimize your content for search engines
-            
-            Select an option above to begin!
-            """)
+            # Render selected component based on chat actions
+            if st.session_state.selected_option == "content":
+                render_content_generator()
+            elif st.session_state.selected_option == "social":
+                render_social_media_campaign()
+            elif st.session_state.selected_option == "audience":
+                render_audience_analyzer()
+            elif st.session_state.selected_option == "seo":
+                render_seo_analyzer()
     
-    # Render chat input at the bottom
-    render_chat_input()
+    # Render chat input if not shown before analysis
+    if not st.session_state.get('show_chat', False):
+        render_chat_input()
 
 if __name__ == "__main__":
     main()

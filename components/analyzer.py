@@ -19,6 +19,15 @@ class CompanyInfo:
     products: List[Dict]
     images: List[str]
 
+def initialize_session_state():
+    """Initialize session state variables"""
+    if 'analyzed_data' not in st.session_state:
+        st.session_state.analyzed_data = None
+    if 'show_chat' not in st.session_state:
+        st.session_state.show_chat = False
+    if 'show_buttons' not in st.session_state:
+        st.session_state.show_buttons = True
+
 class UniversalWebScraper:
     """Universal web scraper with comprehensive data extraction capabilities"""
     
@@ -183,74 +192,21 @@ class UniversalWebScraper:
 
 def render_analyzer():
     """Render the analyzer component in Streamlit"""
-    st.markdown("## Company Website Analyzer")
+    initialize_session_state()
     
-    # URL Analysis Section
-    url_input = st.text_input(
-        "Enter company website URL",
-        placeholder="https://example.com",
-        help="Enter the URL of the company website you want to analyze"
-    )
-    
-    if st.button("Analyze Website", key="analyze_website"):
-        if url_input:
-            with st.spinner("Analyzing website content..."):
-                try:
-                    scraper = UniversalWebScraper()
-                    result = scraper.analyze_website(url_input)
-                    
-                    # Display results in organized sections
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.markdown("### 🏢 Company Information")
-                        st.markdown(f"**Name:** {result.name}")
-                        st.markdown("**Description:**")
-                        st.markdown(result.description)
-                    
-                    with col2:
-                        st.markdown("### 📍 Locations")
-                        for location in result.locations:
-                            with st.expander(f"Office - {location['address'][:30]}..."):
-                                st.markdown(f"**Address:** {location['address']}")
-                                if location['phone']:
-                                    st.markdown(f"**Phone:** {location['phone']}")
-                    
-                    # Social Media Section
-                    st.markdown("### 🔗 Social Media Profiles")
-                    social_cols = st.columns(len(result.social_links) if result.social_links else 1)
-                    for idx, (platform, url) in enumerate(result.social_links.items()):
-                        with social_cols[idx]:
-                            st.markdown(f"[{platform.capitalize()}]({url})")
-                    
-                    # Products Section
-                    if result.products:
-                        st.markdown("### 📦 Products/Services")
-                        for product in result.products:
-                            with st.expander(product['name']):
-                                if product['image_url']:
-                                    st.image(product['image_url'], width=200)
-                                st.markdown(product['description'])
-                                if product['price']:
-                                    st.markdown(f"**Price:** ${product['price']}")
-                    
-                    # Images Section
-                    if result.images:
-                        st.markdown("### 📸 Company Images")
-                        image_cols = st.columns(3)
-                        for idx, image_url in enumerate(result.images):
-                            with image_cols[idx % 3]:
-                                try:
-                                    st.image(image_url, use_column_width=True)
-                                except:
-                                    continue
-                    
-                except Exception as e:
-                    st.error(f"Error analyzing website: {str(e)}")
-        else:
-            st.warning("Please enter a URL to analyze")
-    
-    # File Upload Section
+    # Clean URL input interface at the top
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        url_input = st.text_input(
+            "Enter company website URL",
+            placeholder="https://example.com",
+            help="Enter the URL of the company website you want to analyze",
+            key="url_input"
+        )
+    with col2:
+        analyze_button = st.button("Analyze Website", use_container_width=True)
+
+    # File upload section below
     st.markdown("### 📤 Upload Company Documents")
     uploaded_file = st.file_uploader(
         "Upload documents for analysis",
@@ -258,17 +214,109 @@ def render_analyzer():
         help="Supported formats: PDF, Text files, Images"
     )
     
+    # Handle URL analysis
+    if analyze_button and url_input:
+        with st.spinner("Analyzing website content..."):
+            try:
+                scraper = UniversalWebScraper()
+                result = scraper.analyze_website(url_input)
+                
+                # Save to session state
+                st.session_state.analyzed_data = {
+                    'type': 'website',
+                    'url': url_input,
+                    'data': result.__dict__
+                }
+                
+                # Show analysis results
+                display_analysis_results(result)
+                
+                # Transition to chat interface
+                st.session_state.show_chat = True
+                st.session_state.show_buttons = False
+                
+                # Rerun to update UI
+                st.rerun()
+                
+            except Exception as e:
+                st.error(f"Error analyzing website: {str(e)}")
+    
+    # Handle file upload analysis
     if uploaded_file is not None:
         try:
+            file_content = None
             if uploaded_file.type.startswith('image'):
+                file_content = {
+                    'type': 'image',
+                    'content': uploaded_file
+                }
                 st.image(uploaded_file, caption="Uploaded Image")
             elif uploaded_file.type == 'text/plain':
                 content = uploaded_file.getvalue().decode('utf-8')
+                file_content = {
+                    'type': 'text',
+                    'content': content
+                }
                 st.text_area("File Content", content, height=200)
             else:
+                file_content = {
+                    'type': uploaded_file.type,
+                    'name': uploaded_file.name
+                }
                 st.markdown(f"File uploaded: {uploaded_file.name}")
+            
+            # Save to session state
+            if file_content:
+                st.session_state.analyzed_data = {
+                    'type': 'file',
+                    'file_info': file_content
+                }
+                
+                # Transition to chat interface
+                st.session_state.show_chat = True
+                st.session_state.show_buttons = False
+                
+                # Rerun to update UI
+                st.rerun()
+                
         except Exception as e:
             st.error(f"Error processing file: {str(e)}")
+
+def display_analysis_results(result: CompanyInfo):
+    """Display the analysis results in an organized layout"""
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 🏢 Company Information")
+        st.markdown(f"**Name:** {result.name}")
+        st.markdown("**Description:**")
+        st.markdown(result.description)
+    
+    with col2:
+        st.markdown("### 📍 Locations")
+        for location in result.locations:
+            with st.expander(f"Office - {location['address'][:30]}..."):
+                st.markdown(f"**Address:** {location['address']}")
+                if location['phone']:
+                    st.markdown(f"**Phone:** {location['phone']}")
+    
+    # Social Media Section
+    st.markdown("### 🔗 Social Media Profiles")
+    social_cols = st.columns(len(result.social_links) if result.social_links else 1)
+    for idx, (platform, url) in enumerate(result.social_links.items()):
+        with social_cols[idx]:
+            st.markdown(f"[{platform.capitalize()}]({url})")
+    
+    # Products Section
+    if result.products:
+        st.markdown("### 📦 Products/Services")
+        for product in result.products:
+            with st.expander(product['name']):
+                if product['image_url']:
+                    st.image(product['image_url'], use_column_width=True)
+                st.markdown(product['description'])
+                if product['price']:
+                    st.markdown(f"**Price:** ${product['price']}")
 
 if __name__ == "__main__":
     render_analyzer()
