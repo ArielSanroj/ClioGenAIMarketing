@@ -1,0 +1,195 @@
+import React, { useState } from 'react';
+import { Globe, MapPin, Share2, Package, DollarSign, Loader } from 'lucide-react';
+
+const CompanyAnalyzer = () => {
+  const [urlInput, setUrlInput] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
+  const [companyData, setCompanyData] = useState(null);
+  const [error, setError] = useState(null);
+
+  const analyzeUrl = async (e) => {
+    e.preventDefault();
+    setAnalyzing(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/analyze-company', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: urlInput }),
+      });
+
+      const data = await response.json();
+      setCompanyData(data);
+    } catch (err) {
+      setError('Failed to analyze website. Please check the URL and try again.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-6xl mx-auto space-y-8 p-6">
+      {/* URL Input */}
+      <div className="bg-[#1E1934] p-6 rounded-lg border border-[#3D355A]">
+        <h2 className="text-xl font-semibold text-white mb-4">
+          Company Website Analyzer
+        </h2>
+        <form onSubmit={analyzeUrl} className="flex gap-4">
+          <input
+            type="url"
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            placeholder="Enter company website URL (e.g., https://example.com)"
+            className="flex-1 p-3 bg-[#272042] border border-[#3D355A] rounded-lg text-white 
+                     focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+                     placeholder-gray-400"
+            required
+          />
+          <button
+            type="submit"
+            disabled={analyzing}
+            className="bg-indigo-600 px-6 py-3 rounded-lg text-white font-medium
+                     hover:bg-indigo-700 focus:outline-none focus:ring-2 
+                     focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-600
+                     disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {analyzing ? (
+              <>
+                <Loader className="animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              'Analyze Website'
+            )}
+          </button>
+        </form>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-500 bg-opacity-10 border border-red-500 rounded-lg p-4">
+          <p className="text-red-500">{error}</p>
+        </div>
+      )}
+
+      {/* Analysis Results */}
+      {companyData && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* About Us Section */}
+          <div className="bg-[#1E1934] p-6 rounded-lg border border-[#3D355A]">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="text-indigo-400" />
+              <h3 className="text-lg font-semibold text-white">About Company</h3>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-gray-300 font-medium mb-2">Background</h4>
+                <p className="text-white">{companyData.background}</p>
+              </div>
+              <div>
+                <h4 className="text-gray-300 font-medium mb-2">Mission</h4>
+                <p className="text-white">{companyData.mission}</p>
+              </div>
+              <div>
+                <h4 className="text-gray-300 font-medium mb-2">Values</h4>
+                <ul className="list-disc list-inside text-white">
+                  {companyData.values.map((value, index) => (
+                    <li key={index}>{value}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Location Section */}
+          <div className="bg-[#1E1934] p-6 rounded-lg border border-[#3D355A]">
+            <div className="flex items-center gap-2 mb-4">
+              <MapPin className="text-indigo-400" />
+              <h3 className="text-lg font-semibold text-white">Locations</h3>
+            </div>
+            <div className="space-y-4">
+              {companyData.locations.map((location, index) => (
+                <div key={index} className="p-4 bg-[#272042] rounded-lg">
+                  <p className="text-white font-medium">{location.name}</p>
+                  <p className="text-gray-300">{location.address}</p>
+                  {location.phone && (
+                    <p className="text-gray-300">{location.phone}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Social Media Section */}
+          <div className="bg-[#1E1934] p-6 rounded-lg border border-[#3D355A]">
+            <div className="flex items-center gap-2 mb-4">
+              <Share2 className="text-indigo-400" />
+              <h3 className="text-lg font-semibold text-white">Social Media</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {companyData.socialMedia.map((social, index) => (
+                <a
+                  key={index}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-3 bg-[#272042] rounded-lg
+                           hover:bg-[#2A2545] transition-colors"
+                >
+                  <img
+                    src={social.icon}
+                    alt={social.platform}
+                    className="w-5 h-5"
+                  />
+                  <span className="text-white">{social.platform}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Products Section */}
+          <div className="bg-[#1E1934] p-6 rounded-lg border border-[#3D355A] col-span-full">
+            <div className="flex items-center gap-2 mb-4">
+              <Package className="text-indigo-400" />
+              <h3 className="text-lg font-semibold text-white">Products</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {companyData.products.map((product, index) => (
+                <div key={index} className="bg-[#272042] p-4 rounded-lg">
+                  <div className="aspect-video mb-4 bg-gray-700 rounded-lg overflow-hidden">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <h4 className="text-white font-medium mb-2">{product.name}</h4>
+                  <p className="text-gray-300 text-sm mb-4">
+                    {product.description}
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-indigo-400 font-medium">
+                      ${product.price}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-yellow-400">★</span>
+                      <span className="text-white">{product.rating}</span>
+                      <span className="text-gray-400">
+                        ({product.reviewCount})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CompanyAnalyzer;
