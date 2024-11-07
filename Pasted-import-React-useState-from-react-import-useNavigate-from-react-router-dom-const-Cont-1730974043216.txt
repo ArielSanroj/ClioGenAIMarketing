@@ -1,0 +1,250 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const ContentGenerator = () => {
+  const navigate = useNavigate();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState(null);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    businessName: '',
+    businessDescription: '',
+    contentType: '',
+    format: '',
+    length: '',
+    contentTone: ''
+  });
+
+  // Handle input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Prevent form from submitting normally
+    setIsGenerating(true);
+
+    try {
+      // Here you would normally make an API call to your backend
+      const response = await fetch('/api/generate-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      setGeneratedContent(data);
+    } catch (error) {
+      console.error('Error generating content:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#272042] p-8">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-white mb-8">
+          AI-Powered Content Marketing Generator
+        </h1>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Business Information Section */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-white">
+                Business Information
+              </h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">
+                    Business Name
+                  </label>
+                  <input
+                    type="text"
+                    name="businessName"
+                    value={formData.businessName}
+                    onChange={handleInputChange}
+                    className="w-full p-2 bg-[#1E1934] border border-[#3D355A] rounded-md text-white 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+                             placeholder-gray-400"
+                    placeholder="Enter your business name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">
+                    Business Description
+                  </label>
+                  <textarea
+                    name="businessDescription"
+                    value={formData.businessDescription}
+                    onChange={handleInputChange}
+                    rows={6}
+                    className="w-full p-2 bg-[#1E1934] border border-[#3D355A] rounded-md text-white 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+                             placeholder-gray-400"
+                    placeholder="Describe your business..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Content Configuration Section */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold text-white">
+                Content Configuration
+              </h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">
+                    Content Type
+                  </label>
+                  <select
+                    name="contentType"
+                    value={formData.contentType}
+                    onChange={handleInputChange}
+                    className="w-full p-2 bg-[#1E1934] border border-[#3D355A] rounded-md text-white 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">Select content type</option>
+                    <option value="blog">Blog Post</option>
+                    <option value="social">Social Media Post</option>
+                    <option value="email">Email Newsletter</option>
+                    <option value="landing">Landing Page Copy</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">
+                    Format
+                  </label>
+                  <select
+                    name="format"
+                    value={formData.format}
+                    onChange={handleInputChange}
+                    className="w-full p-2 bg-[#1E1934] border border-[#3D355A] rounded-md text-white 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">Select format</option>
+                    <option value="howto">How-to Guide</option>
+                    <option value="analysis">Industry Analysis</option>
+                    <option value="casestudy">Case Study</option>
+                    <option value="list">List Article</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">
+                    Length
+                  </label>
+                  <select
+                    name="length"
+                    value={formData.length}
+                    onChange={handleInputChange}
+                    className="w-full p-2 bg-[#1E1934] border border-[#3D355A] rounded-md text-white 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">Select length</option>
+                    <option value="short">Short (500 words)</option>
+                    <option value="medium">Medium (1000 words)</option>
+                    <option value="long">Long (2000+ words)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">
+                    Content Tone
+                  </label>
+                  <select
+                    name="contentTone"
+                    value={formData.contentTone}
+                    onChange={handleInputChange}
+                    className="w-full p-2 bg-[#1E1934] border border-[#3D355A] rounded-md text-white 
+                             focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="">Select tone</option>
+                    <option value="professional">Professional</option>
+                    <option value="casual">Casual</option>
+                    <option value="enthusiastic">Enthusiastic</option>
+                    <option value="educational">Educational</option>
+                    <option value="persuasive">Persuasive</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Generate Button */}
+          <button
+            type="submit"
+            disabled={isGenerating}
+            className="w-full bg-indigo-600 text-white py-3 px-4 rounded-md 
+                     hover:bg-indigo-700 focus:outline-none focus:ring-2 
+                     focus:ring-indigo-500 focus:ring-offset-2 
+                     disabled:bg-gray-600 disabled:cursor-not-allowed"
+          >
+            {isGenerating ? 'Generating Content...' : 'Generate Content'}
+          </button>
+        </form>
+
+        {/* Generated Content Display */}
+        {generatedContent && (
+          <div className="mt-8 bg-[#1E1934] p-6 rounded-lg border border-[#3D355A]">
+            <h3 className="text-xl font-semibold text-white mb-4">Generated Content</h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-gray-200 font-medium">Title</h4>
+                <p className="text-white">{generatedContent.title}</p>
+              </div>
+              <div>
+                <h4 className="text-gray-200 font-medium">Content</h4>
+                <p className="text-white whitespace-pre-wrap">{generatedContent.content}</p>
+              </div>
+              <div>
+                <h4 className="text-gray-200 font-medium">Keywords</h4>
+                <div className="flex flex-wrap gap-2">
+                  {generatedContent.keywords.map((keyword, index) => (
+                    <span 
+                      key={index}
+                      className="bg-indigo-600 text-white px-3 py-1 rounded-full text-sm"
+                    >
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-4">
+              <button
+                onClick={() => {/* Handle save */}}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+              >
+                Save Content
+              </button>
+              <button
+                onClick={() => {/* Handle export */}}
+                className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
+              >
+                Export Content
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ContentGenerator;

@@ -14,6 +14,10 @@ from marketing_campaign_system import (
 
 def initialize_session_state():
     """Initialize session state variables if they don't exist"""
+    if 'form_submitted' not in st.session_state:
+        st.session_state.form_submitted = False
+    if 'is_generating' not in st.session_state:
+        st.session_state.is_generating = False
     if 'content_form' not in st.session_state:
         st.session_state.content_form = {
             'business_name': '',
@@ -58,7 +62,7 @@ def render_content_generator():
     # Initialize generator
     generator = EnhancedContentGenerator()
     
-    with st.form(key='content_generator_form'):
+    with st.form(key='content_generator_form', clear_on_submit=False):
         # Business Information
         col1, col2 = st.columns(2)
         
@@ -67,22 +71,16 @@ def render_content_generator():
             business_name = st.text_input(
                 "Business Name",
                 value=st.session_state.content_form['business_name'],
-                key='business_name',
-                help="Enter your business name"
+                key='business_name_input',
+                disabled=st.session_state.is_generating
             )
             
             business_description = st.text_area(
                 "Business Description",
                 value=st.session_state.content_form['business_description'],
-                key='business_description',
+                key='business_description_input',
                 height=150,
-                help="Describe your business, products/services, and target market"
-            )
-            
-            analyze_button = st.form_submit_button(
-                "Analyze Business Context",
-                type="primary",
-                disabled=not (business_name and business_description)
+                disabled=st.session_state.is_generating
             )
             
         with col2:
@@ -110,81 +108,100 @@ def render_content_generator():
             selected_type = st.selectbox(
                 "Content Type",
                 list(content_types.keys()),
-                index=list(content_types.keys()).index(st.session_state.content_form['selected_type'])
+                index=list(content_types.keys()).index(st.session_state.content_form['selected_type']),
+                key='content_type_input',
+                disabled=st.session_state.is_generating
             )
             
             # Dynamic options based on content type
             content_options = {}
             if selected_type == "Blog Post":
-                content_options['format_type'] = st.selectbox("Format", content_types[selected_type]["formats"])
-                content_options['length'] = st.selectbox("Length", content_types[selected_type]["lengths"])
+                content_options['format_type'] = st.selectbox("Format", content_types[selected_type]["formats"], key='format_type_input', disabled=st.session_state.is_generating)
+                content_options['length'] = st.selectbox("Length", content_types[selected_type]["lengths"], key='length_input', disabled=st.session_state.is_generating)
             elif selected_type == "Social Media Post":
-                content_options['platform'] = st.selectbox("Platform", content_types[selected_type]["platforms"])
-                content_options['format_type'] = st.selectbox("Format", content_types[selected_type]["formats"])
+                content_options['platform'] = st.selectbox("Platform", content_types[selected_type]["platforms"], key='platform_input', disabled=st.session_state.is_generating)
+                content_options['format_type'] = st.selectbox("Format", content_types[selected_type]["formats"], key='format_input', disabled=st.session_state.is_generating)
             elif selected_type == "Email Newsletter":
-                content_options['email_type'] = st.selectbox("Newsletter Type", content_types[selected_type]["types"])
-                content_options['length'] = st.selectbox("Length", content_types[selected_type]["lengths"])
+                content_options['email_type'] = st.selectbox("Newsletter Type", content_types[selected_type]["types"], key='email_type_input', disabled=st.session_state.is_generating)
+                content_options['length'] = st.selectbox("Length", content_types[selected_type]["lengths"], key='length_input', disabled=st.session_state.is_generating)
             else:
-                content_options['purpose'] = st.selectbox("Purpose", content_types[selected_type]["purposes"])
-                content_options['style'] = st.selectbox("Style", content_types[selected_type]["styles"])
+                content_options['purpose'] = st.selectbox("Purpose", content_types[selected_type]["purposes"], key='purpose_input', disabled=st.session_state.is_generating)
+                content_options['style'] = st.selectbox("Style", content_types[selected_type]["styles"], key='style_input', disabled=st.session_state.is_generating)
             
             # Tone selection
             tone_options = ["Professional", "Casual", "Enthusiastic", "Educational", "Persuasive"]
             selected_tone = st.selectbox(
                 "Content Tone",
                 tone_options,
-                index=tone_options.index(st.session_state.content_form['selected_tone'])
+                index=tone_options.index(st.session_state.content_form['selected_tone']),
+                key='tone_input',
+                disabled=st.session_state.is_generating
             )
-            
+        
+        # Form submission buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            analyze_button = st.form_submit_button(
+                "Analyze Business Context",
+                type="secondary",
+                disabled=st.session_state.is_generating or not (business_name and business_description)
+            )
+        
+        with col2:
             generate_button = st.form_submit_button(
                 "Generate Content",
-                type="primary"
+                type="primary",
+                disabled=st.session_state.is_generating or not st.session_state.content_form.get('analysis')
             )
-
-    # Update session state after form submission
-    if analyze_button:
-        try:
-            analysis = generator.analyze_business_context(business_name, business_description)
+        
+        # Update session state with form values
+        if analyze_button or generate_button:
             st.session_state.content_form.update({
                 'business_name': business_name,
                 'business_description': business_description,
-                'analysis': analysis
+                'selected_type': selected_type,
+                'content_options': content_options,
+                'selected_tone': selected_tone
             })
-            
-            st.success("Analysis completed successfully!")
-            st.subheader("Business Analysis")
-            
-            col1a, col1b = st.columns(2)
-            with col1a:
-                st.markdown("**Industry Keywords**")
-                for keyword in analysis['industry_keywords']:
-                    st.markdown(f"- {keyword}")
-            
-            with col1b:
-                st.markdown("**Target Segments**")
-                for segment in analysis['target_segments']:
-                    st.markdown(f"- {segment}")
-            
-            st.markdown("**Suggested Tone**")
-            st.info(analysis['tone'])
-            
-            st.markdown("**Unique Selling Points**")
-            for usp in analysis['unique_selling_points']:
-                st.markdown(f"- {usp}")
+
+    # Handle business analysis
+    if analyze_button:
+        st.session_state.is_generating = True
+        try:
+            with st.spinner("Analyzing business context..."):
+                analysis = generator.analyze_business_context(business_name, business_description)
+                st.session_state.content_form['analysis'] = analysis
+                
+                st.success("Analysis completed successfully!")
+                st.subheader("Business Analysis")
+                
+                col1a, col1b = st.columns(2)
+                with col1a:
+                    st.markdown("**Industry Keywords**")
+                    for keyword in analysis['industry_keywords']:
+                        st.markdown(f"- {keyword}")
+                
+                with col1b:
+                    st.markdown("**Target Segments**")
+                    for segment in analysis['target_segments']:
+                        st.markdown(f"- {segment}")
+                
+                st.markdown("**Suggested Tone**")
+                st.info(analysis['tone'])
+                
+                st.markdown("**Unique Selling Points**")
+                for usp in analysis['unique_selling_points']:
+                    st.markdown(f"- {usp}")
         except Exception as e:
             st.error(f"Error during analysis: {str(e)}")
+        finally:
+            st.session_state.is_generating = False
 
     # Handle content generation
     if generate_button and st.session_state.content_form.get('analysis'):
+        st.session_state.is_generating = True
         try:
             with st.spinner("Generating optimized content..."):
-                # Update session state
-                st.session_state.content_form.update({
-                    'selected_type': selected_type,
-                    'content_options': content_options,
-                    'selected_tone': selected_tone
-                })
-                
                 prompt = f"""
                 Business Name: {st.session_state.content_form['business_name']}
                 Business Description: {st.session_state.content_form['business_description']}
@@ -219,7 +236,7 @@ def render_content_generator():
                 with tabs[0]:
                     st.markdown(f"**Title:** {content.title}")
                     st.markdown("**Content:**")
-                    st.text_area("", content.content_body, height=300, disabled=True)
+                    st.text_area("", content.content_body, height=300, disabled=True, key='content_display')
                     
                     col1, col2 = st.columns(2)
                     with col1:
@@ -230,15 +247,18 @@ def render_content_generator():
                             mime="text/plain"
                         )
                     with col2:
-                        if st.button("Save to Campaign"):
-                            generator.campaign.content_pieces.append(content)
-                            # Save to database
-                            db.save_campaign(
-                                business_name=st.session_state.content_form['business_name'],
-                                campaign_type=selected_type,
-                                content=content.content_body
-                            )
-                            st.success("Content saved to campaign!")
+                        if st.button("Save to Campaign", key='save_button'):
+                            try:
+                                generator.campaign.content_pieces.append(content)
+                                # Save to database
+                                db.save_campaign(
+                                    business_name=st.session_state.content_form['business_name'],
+                                    campaign_type=selected_type,
+                                    content=content.content_body
+                                )
+                                st.success("Content saved to campaign!")
+                            except Exception as e:
+                                st.error(f"Error saving content: {str(e)}")
                 
                 with tabs[1]:
                     st.markdown("### SEO Analysis")
@@ -270,5 +290,7 @@ def render_content_generator():
                     st.dataframe(schedule_df)
         except Exception as e:
             st.error(f"Error generating content: {str(e)}")
+        finally:
+            st.session_state.is_generating = False
     elif generate_button and not st.session_state.content_form.get('analysis'):
         st.info("Please complete the business analysis before generating content.")
