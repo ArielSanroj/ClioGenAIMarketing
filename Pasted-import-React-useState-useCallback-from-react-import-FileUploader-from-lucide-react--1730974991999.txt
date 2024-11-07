@@ -1,0 +1,182 @@
+import React, { useState, useCallback } from 'react';
+import { FileUploader } from "lucide-react";
+
+const CompanyAnalyzer = () => {
+  const [analyzing, setAnalyzing] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Handle URL input
+  const handleUrlSubmit = async (e) => {
+    e.preventDefault();
+    setAnalyzing(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/analyze-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: urlInput }),
+      });
+
+      const data = await response.json();
+      setAnalysisResult(data);
+    } catch (err) {
+      setError('Failed to analyze URL. Please try again.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  // Handle file upload
+  const onDrop = useCallback(async (acceptedFiles) => {
+    setAnalyzing(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append('file', acceptedFiles[0]);
+
+    try {
+      const response = await fetch('/api/analyze-file', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      setAnalysisResult(data);
+    } catch (err) {
+      setError('Failed to analyze file. Please try again.');
+    } finally {
+      setAnalyzing(false);
+    }
+  }, []);
+
+  return (
+    <div className="w-full max-w-4xl mx-auto space-y-8">
+      {/* URL Input Section */}
+      <div className="bg-[#1E1934] p-6 rounded-lg border border-[#3D355A]">
+        <h3 className="text-xl font-semibold text-white mb-4">
+          Analyze Company Website
+        </h3>
+        <form onSubmit={handleUrlSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Enter Company URL
+            </label>
+            <div className="flex gap-4">
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="https://example.com"
+                className="flex-1 p-2 bg-[#272042] border border-[#3D355A] rounded-md text-white 
+                         focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                required
+              />
+              <button
+                type="submit"
+                disabled={analyzing}
+                className="bg-indigo-600 px-6 py-2 rounded-md text-white hover:bg-indigo-700
+                         disabled:bg-gray-600 disabled:cursor-not-allowed"
+              >
+                {analyzing ? 'Analyzing...' : 'Analyze'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* File Upload Section */}
+      <div className="bg-[#1E1934] p-6 rounded-lg border border-[#3D355A]">
+        <h3 className="text-xl font-semibold text-white mb-4">
+          Upload Company Documents
+        </h3>
+        <div className="space-y-4">
+          <div
+            className="border-2 border-dashed border-[#3D355A] rounded-lg p-8
+                     flex flex-col items-center justify-center cursor-pointer
+                     hover:border-indigo-500 transition-colors"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const files = Array.from(e.dataTransfer.files);
+              onDrop(files);
+            }}
+            onClick={() => document.getElementById('fileInput').click()}
+          >
+            <FileUploader className="w-12 h-12 text-indigo-500 mb-4" />
+            <p className="text-gray-300 text-center">
+              Drag & drop files here or click to browse
+            </p>
+            <p className="text-gray-400 text-sm mt-2">
+              Supports PDF, JPG, PNG, and audio files
+            </p>
+            <input
+              id="fileInput"
+              type="file"
+              className="hidden"
+              accept=".pdf,.jpg,.jpeg,.png,.mp3,.wav"
+              onChange={(e) => onDrop(Array.from(e.target.files))}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-500 bg-opacity-10 border border-red-500 rounded-lg p-4">
+          <p className="text-red-500">{error}</p>
+        </div>
+      )}
+
+      {/* Analysis Results */}
+      {analysisResult && (
+        <div className="bg-[#1E1934] p-6 rounded-lg border border-[#3D355A]">
+          <h3 className="text-xl font-semibold text-white mb-4">
+            Company Analysis Results
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-gray-200 font-medium">Company Description</h4>
+              <p className="text-white">{analysisResult.description}</p>
+            </div>
+            <div>
+              <h4 className="text-gray-200 font-medium">Target Audience</h4>
+              <p className="text-white">{analysisResult.targetAudience}</p>
+            </div>
+            <div>
+              <h4 className="text-gray-200 font-medium">Value Proposition</h4>
+              <p className="text-white">{analysisResult.valueProposition}</p>
+            </div>
+            <div>
+              <h4 className="text-gray-200 font-medium">Key Products/Services</h4>
+              <ul className="list-disc list-inside text-white">
+                {analysisResult.keyProducts?.map((product, index) => (
+                  <li key={index}>{product}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-gray-200 font-medium">Keywords</h4>
+              <div className="flex flex-wrap gap-2">
+                {analysisResult.keywords?.map((keyword, index) => (
+                  <span
+                    key={index}
+                    className="bg-indigo-600 text-white px-3 py-1 rounded-full text-sm"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CompanyAnalyzer;
