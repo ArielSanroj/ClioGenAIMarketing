@@ -32,6 +32,8 @@ def initialize_session_state():
         st.session_state.analysis_complete = False
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 'analyzer'
+    if 'selected_option' not in st.session_state:
+        st.session_state.selected_option = None
 
 def create_retry_session():
     """Create a requests session with retry logic"""

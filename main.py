@@ -50,7 +50,7 @@ def render_chat_input():
     """, unsafe_allow_html=True)
 
 def render_chat_interface():
-    """Render the chat interface with suggested actions based on analyzed data"""
+    """Render the chat interface with suggested actions"""
     st.markdown("### 💬 Chat with Clio AI")
     
     # Display action buttons
@@ -122,21 +122,15 @@ def main():
     if selected_sidebar_option:
         st.session_state.selected_option = selected_sidebar_option
     
-    # Main content area with proper spacing for chat input
-    main_container = st.container()
+    # Main content area
+    st.title("Clio - Marketing GenAI Assistant")
     
-    with main_container:
-        st.title("Clio - Marketing GenAI Assistant")
-        
-        # Show analyzer component initially
-        if not st.session_state.get('show_chat', False):
-            render_analyzer()
-        
-        # Show chat interface after analysis
-        if st.session_state.get('show_chat', False):
-            render_chat_interface()
-            
-            # Render selected component based on chat actions
+    # Navigation handling
+    if st.session_state.get('show_chat', False) and st.session_state.get('current_page') == 'chat':
+        # Coming from analyzer, show chat interface
+        render_chat_interface()
+        if st.session_state.selected_option:
+            # Show selected component based on chat actions
             if st.session_state.selected_option == "content":
                 render_content_generator()
             elif st.session_state.selected_option == "social":
@@ -145,6 +139,9 @@ def main():
                 render_audience_analyzer()
             elif st.session_state.selected_option == "seo":
                 render_seo_analyzer()
+    else:
+        # Show analyzer component
+        render_analyzer()
     
     # Render chat input if show_chat is true
     if st.session_state.get('show_chat', False):
