@@ -96,6 +96,9 @@ def main():
     if 'analyzed_data' not in st.session_state:
         st.session_state.analyzed_data = True  # Default value for demonstration purposes
         
+    if 'show_chat' not in st.session_state:
+        st.session_state.show_chat = False  # Added to manage chat visibility
+
     # Render sidebar
     selected_sidebar_option = render_sidebar()
     if selected_sidebar_option:
@@ -125,8 +128,8 @@ def main():
             elif st.session_state.selected_option == "seo":
                 render_seo_analyzer()
     
-    # Render chat input if not shown before analysis
-    if not st.session_state.get('show_chat', False):
+    # Render chat input if show_chat is true
+    if st.session_state.get('show_chat', False):
         render_chat_input()
 
 if __name__ == "__main__":

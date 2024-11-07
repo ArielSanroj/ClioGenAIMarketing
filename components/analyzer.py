@@ -268,7 +268,6 @@ def render_analyzer():
                 # Show continue button for file analysis
                 if st.button("Continue", type="primary"):
                     st.session_state.show_chat = True
-                    st.session_state.show_buttons = False
                 
         except Exception as e:
             st.error(f"Error processing file: {str(e)}")
@@ -308,14 +307,6 @@ def display_analysis_results(result: CompanyInfo):
                 st.markdown(product['description'])
                 if product['price']:
                     st.markdown(f"**Price:** ${product['price']}")
-    
-    # Continue button with state transition
-    st.button(
-        "Continue",
-        type="primary",
-        on_click=lambda: setattr(st.session_state, 'show_chat', True),
-        help="Click to proceed to the chat interface"
-    )
 
 if __name__ == "__main__":
     render_analyzer()
