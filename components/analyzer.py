@@ -134,50 +134,100 @@ class UniversalWebScraper:
         return locations
 
     def extract_products(self, soup: BeautifulSoup, url: str) -> List[Dict]:
-        """Extract products/services information"""
+        """Extract products/services information with enhanced detection"""
         products = []
         
-        # Try to find products page
-        products_link = soup.find('a', text=re.compile(r'products?|services?', re.I))
-        if products_link:
-            products_url = products_link.get('href')
-            if not products_url.startswith('http'):
-                products_url = urljoin(url, products_url)
-            try:
-                response = requests.get(products_url, headers={'User-Agent': 'Mozilla/5.0'})
-                soup = BeautifulSoup(response.text, 'html.parser')
-            except:
-                pass
-
-        # Look for product elements
-        product_elements = soup.find_all(class_=re.compile(r'product|service|item', re.I))
+        # Common product container patterns
+        product_containers = soup.find_all(class_=re.compile(r'product|service|item|card|offering|solution', re.I))
+        if not product_containers:
+            # Fallback to common HTML patterns
+            product_containers = soup.find_all(['div', 'section', 'article'], 
+                class_=re.compile(r'(?!header|footer|nav|menu)', re.I))
         
-        for element in product_elements[:5]:  # Limit to 5 products
+        for container in product_containers:
             try:
-                name = element.find(['h2', 'h3', 'h4'])
-                name = name.get_text().strip() if name else "Unknown Product"
+                # Extract product name
+                name_element = (
+                    container.find(['h1', 'h2', 'h3', 'h4', 'strong'], class_=re.compile(r'title|name|heading', re.I)) or
+                    container.find(['h1', 'h2', 'h3', 'h4', 'strong'])
+                )
+                if not name_element:
+                    continue
                 
-                description = element.find(['p', 'div'], class_=re.compile(r'description|details', re.I))
-                description = description.get_text().strip() if description else ""
+                name = name_element.get_text().strip()
+                if not name or name.lower() in ['menu', 'navigation', 'footer']:
+                    continue
+                    
+                # Extract description
+                description_element = (
+                    container.find(['p', 'div'], class_=re.compile(r'description|details|content|text', re.I)) or
+                    container.find(['p', 'div'])
+                )
+                description = description_element.get_text().strip() if description_element else ""
                 
-                price_element = element.find(text=re.compile(r'\$\d+\.?\d*'))
-                price = re.search(r'\$(\d+\.?\d*)', price_element).group(1) if price_element else None
+                # Extract price
+                price = None
+                price_patterns = [
+                    r'\$\s*(\d+(?:,\d{3})*(?:\.\d{2})?)',  # Standard price format
+                    r'(\d+(?:,\d{3})*(?:\.\d{2})?)\s*USD',  # USD format
+                    r'starting at\s*\$\s*(\d+(?:,\d{3})*(?:\.\d{2})?)',  # Starting at format
+                    r'from\s*\$\s*(\d+(?:,\d{3})*(?:\.\d{2})?)'  # From format
+                ]
                 
-                image = element.find('img')
-                image_url = image['src'] if image else None
-                if image_url and not image_url.startswith('http'):
-                    image_url = urljoin(url, image_url)
-
+                for pattern in price_patterns:
+                    price_match = re.search(pattern, container.get_text(), re.I)
+                    if price_match:
+                        price = price_match.group(1)
+                        break
+                
+                # Extract image
+                image = container.find('img')
+                image_url = None
+                if image:
+                    src = image.get('src') or image.get('data-src') or image.get('data-lazy-src')
+                    if src:
+                        image_url = urljoin(url, src)
+                
+                # Extract features/specifications
+                features = []
+                feature_lists = container.find_all(['ul', 'ol'])
+                for feature_list in feature_lists:
+                    features.extend([item.get_text().strip() for item in feature_list.find_all('li')])
+                
+                # Extract call-to-action links
+                cta = None
+                cta_element = container.find('a', class_=re.compile(r'cta|button|learn-more|buy|purchase', re.I))
+                if cta_element:
+                    cta = {
+                        'text': cta_element.get_text().strip(),
+                        'url': urljoin(url, cta_element['href'])
+                    }
+                
                 products.append({
                     "name": name,
                     "description": description,
                     "price": price,
-                    "image_url": image_url
+                    "image_url": image_url,
+                    "features": features if features else None,
+                    "cta": cta
                 })
+                
             except Exception as e:
                 continue
         
-        return products
+        # If no products found, try to find a dedicated products/services page
+        if not products:
+            products_link = soup.find('a', text=re.compile(r'products?|services?|solutions?', re.I))
+            if products_link:
+                products_url = urljoin(url, products_link['href'])
+                try:
+                    response = requests.get(products_url, headers={'User-Agent': 'Mozilla/5.0'})
+                    new_soup = BeautifulSoup(response.text, 'html.parser')
+                    return self.extract_products(new_soup, products_url)
+                except:
+                    pass
+        
+        return products[:10]  # Limit to 10 products
 
     def extract_images(self, soup: BeautifulSoup, url: str) -> List[str]:
         """Extract relevant images"""
@@ -297,16 +347,26 @@ def display_analysis_results(result: CompanyInfo):
         with social_cols[idx]:
             st.markdown(f"[{platform.capitalize()}]({url})")
     
-    # Products Section
+    # Products Section with enhanced display
     if result.products:
         st.markdown("### 📦 Products/Services")
         for product in result.products:
             with st.expander(product['name']):
-                if product['image_url']:
-                    st.image(product['image_url'], use_column_width=True)
-                st.markdown(product['description'])
-                if product['price']:
-                    st.markdown(f"**Price:** ${product['price']}")
+                cols = st.columns([2, 1])
+                with cols[0]:
+                    st.markdown(f"**Description:**\n{product['description']}")
+                    if product.get('features'):
+                        st.markdown("**Features:**")
+                        for feature in product['features']:
+                            st.markdown(f"- {feature}")
+                    if product.get('price'):
+                        st.markdown(f"**Price:** ${product['price']}")
+                    if product.get('cta'):
+                        st.markdown(f"[{product['cta']['text']}]({product['cta']['url']})")
+                
+                with cols[1]:
+                    if product.get('image_url'):
+                        st.image(product['image_url'], use_column_width=True)
 
 if __name__ == "__main__":
     render_analyzer()
