@@ -70,6 +70,21 @@ def render_brand_values():
             else:
                 st.error("Please fill in all fields before proceeding.")
     
+    # Add skip button after the form
+    col1, col2 = st.columns([5, 1])
+    with col2:
+        if st.button("Skip", type="secondary"):
+            # Update session state to skip brand values
+            st.session_state.brand_values.update({
+                'mission': '',
+                'values': [],
+                'virtues': [],
+                'is_completed': True  # Mark as completed even though skipped
+            })
+            # Set show_icp_questionnaire to true to move to ICP
+            st.session_state.show_icp_questionnaire = True
+            st.rerun()
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Footer
