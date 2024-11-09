@@ -47,20 +47,8 @@ def render_chat_input():
             </div>
         """, unsafe_allow_html=True)
 
-def main():
-    st.set_page_config(
-        page_title="AI Marketing Assistant",
-        page_icon="assets/logo.svg",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-    
-    # Initialize session state
-    initialize_session_state()
-    
-    # Apply custom styles
-    apply_custom_styles()
-    
+def render_dashboard():
+    """Render the main dashboard after brand values are completed"""
     # Render sidebar and get selected option
     selected_option = render_sidebar()
     if selected_option:
@@ -112,9 +100,33 @@ def main():
             
             Select an option above to begin!
             """)
+        
+        # Render chat input at the bottom
+        render_chat_input()
+
+def main():
+    st.set_page_config(
+        page_title="AI Marketing Assistant",
+        page_icon="assets/logo.svg",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
     
-    # Render chat input at the bottom
-    render_chat_input()
+    # Initialize session state
+    initialize_session_state()
+    
+    # Apply custom styles
+    apply_custom_styles()
+    
+    # Check if brand values are completed
+    if not st.session_state.brand_values.get('is_completed', False):
+        # Add class to body for welcome screen styling
+        st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
+        render_brand_values()
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        # Show main dashboard
+        render_dashboard()
 
 if __name__ == "__main__":
     main()

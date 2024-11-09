@@ -20,13 +20,13 @@ def initialize_session_state():
             'business_description': '',
             'content_type': 'Blog Post',
             'format': '',
-            'length': '',
+            'length': 'Medium (1000 words)',
             'tone': 'Professional',
             'generated_content': None,
             'analysis': None
         }
     
-    # Add missing state variables
+    # Restore missing state variables
     if 'brand_values' not in st.session_state:
         st.session_state.brand_values = {}
     if 'icp_data' not in st.session_state:
@@ -34,7 +34,7 @@ def initialize_session_state():
 
 def update_form_state(key: str, value: Optional[str]):
     """Update session state with form data"""
-    if value is not None:  # Only update if value is not None
+    if value is not None:
         st.session_state.content_form_state[key] = value
 
 def render_content_generator():
@@ -42,96 +42,79 @@ def render_content_generator():
     
     st.markdown("## Content Marketing Generator")
     
-    with st.form(key='content_generator_form', clear_on_submit=False):
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Business Information")
-            business_name = st.text_input(
-                "Business Name",
-                value=st.session_state.content_form_state['business_name'],
-                key='business_name_input',
-                help="Enter your business name"
-            )
-            
-            business_description = st.text_area(
-                "Business Description",
-                value=st.session_state.content_form_state['business_description'],
-                key='business_description_input',
-                help="Describe your business and its unique value proposition",
-                height=150
-            )
-        
-        with col2:
-            st.subheader("Content Configuration")
-            
-            content_types = {
-                "Blog Post": ["How-to Guide", "Industry Analysis", "Case Study", "List Article"],
-                "Social Media Post": ["Text Post", "Image Caption", "Poll", "Story"],
-                "Email Newsletter": ["Welcome Series", "Product Update", "Industry News", "Educational"],
-                "Landing Page Copy": ["Product Launch", "Service Offering", "Lead Magnet", "Event Registration"]
-            }
-            
-            content_type = st.selectbox(
-                "Content Type",
-                options=list(content_types.keys()),
-                index=list(content_types.keys()).index(st.session_state.content_form_state['content_type']),
-                key='content_type_input'
-            )
-            
-            format_options = content_types[content_type]
-            selected_format = st.selectbox(
-                "Format",
-                options=format_options,
-                key='format_input'
-            )
-            
-            content_lengths = ["Short (500 words)", "Medium (1000 words)", "Long (2000+ words)"]
-            selected_length = st.selectbox(
-                "Content Length",
-                options=content_lengths,
-                key='length_input'
-            )
-            
-            content_tones = ["Professional", "Casual", "Enthusiastic", "Educational", "Persuasive"]
-            selected_tone = st.selectbox(
-                "Content Tone",
-                options=content_tones,
-                index=content_tones.index(st.session_state.content_form_state['tone']),
-                key='tone_input'
-            )
-        
-        # Submit buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            analyze_button = st.form_submit_button(
-                "Analyze Content Strategy",
-                type="secondary",
-                help="Analyze your content strategy before generation"
-            )
-        
-        with col2:
-            generate_button = st.form_submit_button(
-                "Generate Content",
-                type="primary",
-                help="Generate optimized content based on your inputs"
-            )
-        
-        # Update session state when form is submitted
-        if analyze_button or generate_button:
-            # Update form state with safe handling of None values
-            update_form_state('business_name', business_name)
-            update_form_state('business_description', business_description)
-            update_form_state('content_type', content_type)
-            update_form_state('format', selected_format)
-            update_form_state('length', selected_length)
-            update_form_state('tone', selected_tone)
+    # Business Information Section
+    st.subheader("Business Information")
     
-    # Handle form submissions
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        business_name = st.text_input(
+            "Business Name",
+            value=st.session_state.content_form_state['business_name'],
+            key='business_name_input'
+        )
+        
+        business_description = st.text_area(
+            "Business Description",
+            value=st.session_state.content_form_state['business_description'],
+            key='business_description_input',
+            help="Describe your business and its unique value proposition",
+            height=150
+        )
+    
+    with col2:
+        st.subheader("Content Configuration")
+        
+        content_types = {
+            "Blog Post": ["How-to Guide", "Industry Analysis", "Case Study", "List Article"],
+            "Social Media Post": ["Text Post", "Image Caption", "Poll", "Story"],
+            "Email Newsletter": ["Welcome Series", "Product Update", "Industry News", "Educational"],
+            "Landing Page Copy": ["Product Launch", "Service Offering", "Lead Magnet", "Event Registration"]
+        }
+        
+        content_type = st.selectbox(
+            "Content Type",
+            options=list(content_types.keys()),
+            index=list(content_types.keys()).index(st.session_state.content_form_state['content_type']),
+            key='content_type_input'
+        )
+        
+        format_options = content_types[content_type]
+        selected_format = st.selectbox(
+            "Format",
+            options=format_options,
+            key='format_input'
+        )
+        
+        content_lengths = ["Short (500 words)", "Medium (1000 words)", "Long (2000+ words)"]
+        selected_length = st.selectbox(
+            "Content Length",
+            options=content_lengths,
+            index=content_lengths.index(st.session_state.content_form_state['length']),
+            key='length_input'
+        )
+        
+        content_tones = ["Professional", "Casual", "Enthusiastic", "Educational", "Persuasive"]
+        selected_tone = st.selectbox(
+            "Content Tone",
+            options=content_tones,
+            index=content_tones.index(st.session_state.content_form_state['tone']),
+            key='tone_input'
+        )
+    
+    # Action buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        analyze_button = st.button("Analyze Content Strategy", type="secondary")
+    
+    with col2:
+        generate_button = st.button("Generate Content", type="primary")
+    
+    # Analyze Content Strategy
     if analyze_button and business_name and business_description:
         with st.spinner("Analyzing content strategy..."):
             try:
-                # Create context for analysis
+                # Restore analysis functionality
                 prompt = f"""
                 Business Name: {business_name}
                 Business Description: {business_description}
@@ -170,6 +153,7 @@ def render_content_generator():
             except Exception as e:
                 st.error(f"Error during analysis: {str(e)}")
     
+    # Generate Content
     elif generate_button and business_name and business_description:
         with st.spinner("Generating content..."):
             try:
@@ -232,3 +216,6 @@ def render_content_generator():
     
     elif generate_button or analyze_button:
         st.warning("Please fill in all required fields before proceeding.")
+
+if __name__ == "__main__":
+    render_content_generator()

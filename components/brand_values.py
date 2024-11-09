@@ -14,16 +14,28 @@ def render_brand_values():
     """Render the brand values and virtues form"""
     initialize_brand_values_state()
     
-    st.markdown("## Brand Values & Virtues")
-    st.markdown("Define your brand's core values and mission to ensure all generated content aligns with your brand identity.")
+    # Add centered container
+    st.markdown('<div class="centered-container">', unsafe_allow_html=True)
+    
+    # Logo
+    st.image("logoclio.png", width=100)
+    
+    # Welcome message
+    st.markdown('<h1 class="welcome-title">Welcome to Clio</h1>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="welcome-subtitle">Please tell us about your company to personalize your experience</p>',
+        unsafe_allow_html=True
+    )
     
     with st.form(key='brand_values_form', clear_on_submit=False):
         mission = st.text_area(
-            "Brand Mission Statement",
+            "What is your company's mission?",
             value=st.session_state.brand_values.get('mission', ''),
-            help="Define your brand's purpose and goals in a clear, concise statement.",
-            height=100
+            height=100,
+            help="Define your company's purpose and goals in a clear, concise statement."
         )
+        
+        st.markdown("### What are the virtues and values of your brand?")
         
         # Convert list to string for text input
         current_values = ', '.join(st.session_state.brand_values.get('values', []))
@@ -42,7 +54,7 @@ def render_brand_values():
             height=100
         )
         
-        submit_button = st.form_submit_button("Save Brand Values")
+        submit_button = st.form_submit_button("Save and Continue")
         
         if submit_button:
             if mission and values and virtues:
@@ -56,14 +68,23 @@ def render_brand_values():
                 st.success("Brand values saved successfully!")
             else:
                 st.error("Please fill in all fields before proceeding.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Display current values if completed
-    if st.session_state.brand_values.get('is_completed'):
-        st.markdown("### Current Brand Profile")
-        st.markdown(f"**Mission:** {st.session_state.brand_values['mission']}")
-        st.markdown("**Core Values:**")
-        for value in st.session_state.brand_values['values']:
-            st.markdown(f"- {value}")
-        st.markdown("**Brand Virtues:**")
-        for virtue in st.session_state.brand_values['virtues']:
-            st.markdown(f"- {virtue}")
+    # Footer
+    st.markdown("""
+        <div class="footer">
+            <div>
+                <a href="#">Contact Us</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <div>
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-youtube"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-whatsapp"></i></a>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)

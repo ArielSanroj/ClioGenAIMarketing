@@ -5,13 +5,47 @@ def apply_custom_styles():
         <style>
         /* Main layout and colors */
         .main {
-            background-color: #F3F1FF;
+            background-color: #FFF8E6;
             padding: 2rem;
         }
         
-        /* Sidebar styling */
-        .css-1d391kg {
-            background-color: #F3F1FF;
+        /* Centered container */
+        .centered-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        /* Welcome title */
+        .welcome-title {
+            font-size: 3rem;
+            color: #28264D;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        /* Welcome subtitle */
+        .welcome-subtitle {
+            font-size: 1.2rem;
+            color: #4A4867;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+        
+        /* Form styling */
+        .stTextInput > label, .stTextArea > label {
+            font-size: 1rem;
+            color: #28264D;
+            font-weight: 500;
+        }
+        
+        .stTextInput > div > div > input, .stTextArea > div > textarea {
+            background-color: white;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 0.75rem;
         }
         
         /* Button styles */
@@ -137,6 +171,20 @@ def apply_custom_styles():
         
         .css-1vq4p4l {  /* Main content */
             padding: 2rem;
+        }
+        
+        /* Hide sidebar when showing welcome screen */
+        .welcome-screen .css-1d391kg {
+            display: none;
+        }
+        
+        /* Streamlit default overrides */
+        .stApp {
+            background-color: #FFF8E6;
+        }
+        
+        .css-1d391kg {
+            background-color: #FFF8E6;
         }
         </style>
     """, unsafe_allow_html=True)
