@@ -19,11 +19,14 @@ def initialize_session_state():
         }
     if 'icp_data' not in st.session_state:
         st.session_state.icp_data = {
+            'knowledge_level': '',
+            'current_question': 1,
             'demographics': {},
             'psychographics': {},
             'archetype': '',
             'pain_points': [],
             'goals': [],
+            'answers': {},
             'is_completed': False
         }
     if 'selected_option' not in st.session_state:
@@ -48,7 +51,7 @@ def render_chat_input():
         """, unsafe_allow_html=True)
 
 def render_dashboard():
-    """Render the main dashboard after brand values are completed"""
+    """Render the main dashboard after onboarding is completed"""
     # Render sidebar and get selected option
     selected_option = render_sidebar()
     if selected_option:
@@ -118,14 +121,19 @@ def main():
     # Apply custom styles
     apply_custom_styles()
     
-    # Check if brand values are completed
+    # Check completion status for both brand values and ICP
     if not st.session_state.brand_values.get('is_completed', False):
         # Add class to body for welcome screen styling
         st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
         render_brand_values()
         st.markdown('</div>', unsafe_allow_html=True)
+    elif not st.session_state.icp_data.get('is_completed', False):
+        # Show ICP questionnaire after brand values are completed
+        st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
+        render_icp_definition()
+        st.markdown('</div>', unsafe_allow_html=True)
     else:
-        # Show main dashboard
+        # Show main dashboard only after both are completed
         render_dashboard()
 
 if __name__ == "__main__":
