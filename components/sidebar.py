@@ -16,8 +16,20 @@ def render_sidebar():
         }
         
         selected_option = None
+        
+        # Handle ICP view button specially
+        if st.button("View my ICP", key=f"menu_icp"):
+            if not st.session_state.icp_data.get('is_completed', False):
+                # If ICP not completed, set state to trigger questionnaire
+                st.session_state.show_icp_questionnaire = True
+                selected_option = "icp_questionnaire"
+            else:
+                # If completed, show summary
+                selected_option = "icp_summary"
+        
+        # Other navigation buttons
         for label, value in menu_options.items():
-            if st.button(label, key=f"menu_{value}"):
+            if label != "View my ICP" and st.button(label, key=f"menu_{value}"):
                 selected_option = value
                 
         return selected_option

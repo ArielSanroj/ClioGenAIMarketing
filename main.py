@@ -31,6 +31,23 @@ def initialize_session_state():
         }
     if 'selected_option' not in st.session_state:
         st.session_state.selected_option = None
+    if 'show_icp_questionnaire' not in st.session_state:
+        st.session_state.show_icp_questionnaire = False
+
+def render_icp_summary():
+    """Render the ICP summary view"""
+    st.markdown("### Your ICP Profile")
+    st.markdown(f"**Knowledge Level:** {st.session_state.icp_data['knowledge_level']}")
+    
+    st.markdown("**Your Answers:**")
+    for q_num in range(1, 6):
+        answer = st.session_state.icp_data['answers'].get(f"q{q_num}", "Not answered")
+        st.markdown(f"**Question {q_num}**")
+        if isinstance(answer, list):
+            for item in answer:
+                st.markdown(f"- {item}")
+        else:
+            st.markdown(f"{answer}")
 
 def render_chat_input():
     """Render the chat input component"""
@@ -61,6 +78,14 @@ def render_dashboard():
     main_container = st.container()
     
     with main_container:
+        # Handle ICP views
+        if st.session_state.selected_option == "icp_questionnaire":
+            render_icp_definition()
+            return
+        elif st.session_state.selected_option == "icp_summary":
+            render_icp_summary()
+            return
+        
         # Title and navigation
         st.title("AI Marketing Assistant")
         
@@ -127,7 +152,7 @@ def main():
         st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
         render_brand_values()
         st.markdown('</div>', unsafe_allow_html=True)
-    elif not st.session_state.icp_data.get('is_completed', False):
+    elif not st.session_state.icp_data.get('is_completed', False) and st.session_state.show_icp_questionnaire:
         # Show ICP questionnaire after brand values are completed
         st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
         render_icp_definition()
