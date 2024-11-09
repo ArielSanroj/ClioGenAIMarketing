@@ -66,6 +66,7 @@ def render_brand_values():
                     'is_completed': True
                 })
                 st.success("Brand values saved successfully!")
+                st.rerun()  # Add rerun to force page refresh
             else:
                 st.error("Please fill in all fields before proceeding.")
     
