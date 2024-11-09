@@ -4,96 +4,102 @@ from components.content_generator import render_content_generator
 from components.social_media import render_social_media_campaign
 from components.audience_analyzer import render_audience_analyzer
 from components.seo_analyzer import render_seo_analyzer
+from components.brand_values import render_brand_values
+from components.icp_definition import render_icp_definition
 from styles import apply_custom_styles
-from database import db
+
+def initialize_session_state():
+    """Initialize the session state variables"""
+    if 'brand_values' not in st.session_state:
+        st.session_state.brand_values = {
+            'mission': '',
+            'values': [],
+            'virtues': [],
+            'is_completed': False
+        }
+    if 'icp_data' not in st.session_state:
+        st.session_state.icp_data = {
+            'demographics': {},
+            'psychographics': {},
+            'archetype': '',
+            'pain_points': [],
+            'goals': [],
+            'is_completed': False
+        }
+    if 'selected_option' not in st.session_state:
+        st.session_state.selected_option = None
 
 def render_chat_input():
-    st.markdown("""
-        <div class="chat-container">
-            <form id="chat-form" onsubmit="return false;">
+    """Render the chat input component"""
+    chat_container = st.container()
+    with chat_container:
+        st.markdown("""
+            <div class="chat-container">
                 <div style="display: flex; align-items: center;">
-                    <input type="text" class="chat-input" placeholder="Message Clio AI" id="chat-input">
-                    <button type="submit" class="send-button" onclick="handleSubmit()">
+                    <input type="text" class="chat-input" placeholder="Message Clio AI">
+                    <button class="send-button">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                         </svg>
                     </button>
                 </div>
-            </form>
-        </div>
-        
-        <script>
-        function handleSubmit() {
-            const input = document.getElementById('chat-input');
-            const message = input.value.trim();
-            if (message) {
-                // Clear input
-                input.value = '';
-                // Send message to Streamlit
-                window.parent.postMessage({
-                    type: 'streamlit:message',
-                    chat_message: message
-                }, '*');
-            }
-            return false;
-        }
-        
-        // Add event listener for Enter key
-        document.getElementById('chat-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleSubmit();
-            }
-        });
-        </script>
-    """, unsafe_allow_html=True)
+            </div>
+        """, unsafe_allow_html=True)
 
 def main():
     st.set_page_config(
         page_title="AI Marketing Assistant",
         page_icon="assets/logo.svg",
-        layout="wide"
+        layout="wide",
+        initial_sidebar_state="expanded"
     )
     
+    # Initialize session state
+    initialize_session_state()
+    
+    # Apply custom styles
     apply_custom_styles()
     
-    # Render sidebar
+    # Render sidebar and get selected option
     selected_option = render_sidebar()
+    if selected_option:
+        st.session_state.selected_option = selected_option
     
-    # Add container for main content to add proper spacing for chat input
+    # Main content area
     main_container = st.container()
     
     with main_container:
+        # Title and navigation
         st.title("AI Marketing Assistant")
         
         # Navigation buttons
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            if st.button("Generate Content Marketing"):
-                selected_option = "content"
+            if st.button("Generate Content Marketing", type="primary"):
+                st.session_state.selected_option = "content"
         with col2:
             if st.button("Create Social Media Campaign"):
-                selected_option = "social"
+                st.session_state.selected_option = "social"
         with col3:
             if st.button("Analyze Target Audience"):
-                selected_option = "audience"
+                st.session_state.selected_option = "audience"
         with col4:
             if st.button("Generate SEO recommendations"):
-                selected_option = "seo"
+                st.session_state.selected_option = "seo"
         
         # Render selected component
-        if selected_option == "content":
+        if st.session_state.selected_option == "content":
             render_content_generator()
-        elif selected_option == "social":
+        elif st.session_state.selected_option == "social":
             render_social_media_campaign()
-        elif selected_option == "audience":
+        elif st.session_state.selected_option == "audience":
             render_audience_analyzer()
-        elif selected_option == "seo":
+        elif st.session_state.selected_option == "seo":
             render_seo_analyzer()
         else:
-            # Default view - Quick start guide
+            # Default welcome view
             st.markdown("""
             ## 👋 Welcome to Clio AI Marketing Assistant!
             
