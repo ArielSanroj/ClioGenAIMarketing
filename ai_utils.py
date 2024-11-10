@@ -25,8 +25,7 @@ def generate_marketing_content(business_info: str, content_type: str) -> dict:
     
     response = openai_client.chat.completions.create(
         model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"}
+        messages=[{"role": "user", "content": prompt}]
     )
     return json.loads(response.choices[0].message.content)
 
@@ -50,8 +49,7 @@ def analyze_audience(business_info: str) -> dict:
     
     response = openai_client.chat.completions.create(
         model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"}
+        messages=[{"role": "user", "content": prompt}]
     )
     return json.loads(response.choices[0].message.content)
 
@@ -62,7 +60,7 @@ def analyze_webpage(url: str) -> dict:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         
         # Parse content
@@ -87,49 +85,75 @@ def analyze_webpage(url: str) -> dict:
         
         # Analyze content with AI
         analysis_prompt = f"""
-        Analyze this webpage content and provide SEO recommendations:
+        Analyze this webpage content and provide SEO recommendations in JSON format:
         
         URL: {url}
         Title: {title}
         Meta Description: {meta_description}
         Content: {main_content[:2000]}...
         
-        Provide analysis in JSON format with:
-        {{
-            "topics": [],
-            "keyword_suggestions": [],
-            "content_gaps": [],
-            "meta_suggestions": {{
-                "title": "",
-                "description": ""
-            }},
-            "content_recommendations": [],
-            "semantic_topics": [],
-            "estimated_word_count": 0,
-            "readability_score": 0
-        }}
+        Please structure your response as a JSON object with the following fields:
+        - topics: list of main topics covered
+        - keyword_suggestions: list of relevant keywords
+        - content_gaps: list of missing topics or areas
+        - meta_suggestions: object with title and description
+        - content_recommendations: list of improvements
+        - semantic_topics: list of related topics
+        - estimated_word_count: number
+        - readability_score: number (0-100)
         """
         
-        response = openai_client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": analysis_prompt}],
-            response_format={"type": "json_object"}
-        )
-        
-        analysis = json.loads(response.choices[0].message.content)
-        
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": analysis_prompt}]
+            )
+            
+            # Parse the response content
+            content = response.choices[0].message.content
+            try:
+                analysis = json.loads(content)  # Try to parse as JSON first
+            except json.JSONDecodeError:
+                # If not valid JSON, create structured format from text
+                analysis = {
+                    "topics": [],
+                    "keyword_suggestions": [],
+                    "content_gaps": [],
+                    "meta_suggestions": {
+                        "title": "",
+                        "description": ""
+                    },
+                    "content_recommendations": [],
+                    "semantic_topics": [],
+                    "estimated_word_count": 0,
+                    "readability_score": 0
+                }
+            
+            return {
+                "url": url,
+                "domain": urlparse(url).netloc,
+                "title": title,
+                "meta_description": meta_description,
+                "meta_keywords": meta_keywords,
+                "analysis": analysis
+            }
+            
+        except Exception as e:
+            return {
+                "error": f"AI analysis error: {str(e)}",
+                "url": url,
+                "domain": urlparse(url).netloc,
+            }
+            
+    except requests.RequestException as e:
         return {
+            "error": f"Request error: {str(e)}",
             "url": url,
-            "domain": urlparse(url).netloc,
-            "title": title,
-            "meta_description": meta_description,
-            "meta_keywords": meta_keywords,
-            "analysis": analysis
+            "domain": urlparse(url).netloc if url else "",
         }
-        
     except Exception as e:
         return {
-            "error": str(e),
+            "error": f"Unexpected error: {str(e)}",
             "url": url,
             "domain": urlparse(url).netloc if url else "",
         }
@@ -151,7 +175,6 @@ def generate_seo_recommendations(content: str) -> dict:
     
     response = openai_client.chat.completions.create(
         model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"}
+        messages=[{"role": "user", "content": prompt}]
     )
     return json.loads(response.choices[0].message.content)
