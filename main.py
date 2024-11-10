@@ -6,6 +6,7 @@ from components.audience_analyzer import render_audience_analyzer
 from components.seo_analyzer import render_seo_analyzer
 from components.brand_values import render_brand_values
 from components.icp_definition import render_icp_definition
+from components.consumer_archetypes import render_consumer_archetypes
 from styles import apply_custom_styles
 
 def initialize_session_state():
@@ -84,6 +85,9 @@ def render_dashboard():
             return
         elif st.session_state.selected_option == "icp_summary":
             render_icp_summary()
+            return
+        elif st.session_state.selected_option == "archetypes":
+            render_consumer_archetypes()
             return
         
         # Title and navigation
