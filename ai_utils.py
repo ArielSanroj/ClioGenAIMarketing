@@ -29,27 +29,38 @@ def generate_marketing_content(business_info: str, content_type: str) -> dict:
     )
     return json.loads(response.choices[0].message.content)
 
-def analyze_audience(business_info: str) -> dict:
-    prompt = f"""
-    Analyze the target audience for the following business:
-    {business_info}
+def analyze_market_trends(keywords, region=None) -> dict:
+    """Analyze market trends for given keywords"""
+    trend_prompt = f"""
+    Analyze market trends for these keywords: {keywords}
+    Region: {region if region else 'Global'}
     
-    Provide detailed demographic information and insights in JSON format:
+    Provide the analysis in JSON format with the following structure:
     {{
-        "demographics": {{
-            "age_groups": [],
-            "interests": [],
-            "locations": []
+        "search_volume": {{
+            "trend": "Monthly search volume trend description",
+            "data": [monthly_volumes_list]
         }},
-        "psychographics": [],
-        "pain_points": [],
-        "recommendations": []
+        "competition": {{
+            "level": "high/medium/low",
+            "analysis": "Detailed competition analysis"
+        }},
+        "regional_popularity": {{
+            "top_regions": ["region1", "region2"],
+            "scores": [score1, score2]
+        }},
+        "rising_topics": ["topic1", "topic2"],
+        "seasonal_patterns": {{
+            "peak_months": ["month1", "month2"],
+            "low_months": ["month3", "month4"],
+            "pattern_description": "Description of seasonality"
+        }}
     }}
     """
     
     response = openai_client.chat.completions.create(
         model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{"role": "user", "content": trend_prompt}]
     )
     return json.loads(response.choices[0].message.content)
 
@@ -85,22 +96,30 @@ def analyze_webpage(url: str) -> dict:
         
         # Analyze content with AI
         analysis_prompt = f"""
-        Analyze this webpage content and provide SEO recommendations in JSON format:
+        Analyze this webpage content and provide SEO recommendations:
         
         URL: {url}
         Title: {title}
         Meta Description: {meta_description}
         Content: {main_content[:2000]}...
         
-        Please structure your response as a JSON object with the following fields:
+        Provide recommendations in JSON format with:
         - topics: list of main topics covered
-        - keyword_suggestions: list of relevant keywords
+        - keyword_suggestions: list of relevant keywords with search volumes
         - content_gaps: list of missing topics or areas
         - meta_suggestions: object with title and description
         - content_recommendations: list of improvements
         - semantic_topics: list of related topics
         - estimated_word_count: number
         - readability_score: number (0-100)
+        - traffic_potential: {{
+            "estimated_monthly_visits": number,
+            "conversion_potential": "high/medium/low",
+            "engagement_metrics": {{
+                "avg_time_on_page": string,
+                "bounce_rate": string
+            }}
+        }}
         """
         
         try:
@@ -112,9 +131,13 @@ def analyze_webpage(url: str) -> dict:
             # Parse the response content
             content = response.choices[0].message.content
             try:
-                analysis = json.loads(content)  # Try to parse as JSON first
+                analysis = json.loads(content)
+                
+                # Get market trends for suggested keywords
+                market_trends = analyze_market_trends(analysis['keyword_suggestions'])
+                analysis['market_trends'] = market_trends
+                
             except json.JSONDecodeError:
-                # If not valid JSON, create structured format from text
                 analysis = {
                     "topics": [],
                     "keyword_suggestions": [],
@@ -126,7 +149,15 @@ def analyze_webpage(url: str) -> dict:
                     "content_recommendations": [],
                     "semantic_topics": [],
                     "estimated_word_count": 0,
-                    "readability_score": 0
+                    "readability_score": 0,
+                    "traffic_potential": {
+                        "estimated_monthly_visits": 0,
+                        "conversion_potential": "low",
+                        "engagement_metrics": {
+                            "avg_time_on_page": "0:00",
+                            "bounce_rate": "0%"
+                        }
+                    }
                 }
             
             return {
