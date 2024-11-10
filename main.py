@@ -95,6 +95,13 @@ def render_dashboard():
         elif st.session_state.selected_option == "archetypes":
             render_consumer_archetypes()
             return
+        elif st.session_state.selected_option == "market_analysis":
+            if st.session_state.webpage_analysis.get('is_completed'):
+                from utils.webpage_analysis import display_webpage_analysis
+                display_webpage_analysis(st.session_state.webpage_analysis['analysis'])
+            else:
+                render_seo_analyzer()
+            return
         
         # Title and navigation
         st.title("AI Marketing Assistant")
