@@ -10,7 +10,6 @@ def render_sidebar():
             "View my ICP": "icp",
             "Market analysis": "market_analysis",
             "Consumer Archetypes": "archetypes",
-            "Social Media Sentiment": "sentiment",
             "New Chat": "new_chat",
             "Chats history": "history"
         }

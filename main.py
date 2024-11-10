@@ -2,7 +2,6 @@ import streamlit as st
 from components.sidebar import render_sidebar
 from components.content_generator import render_content_generator
 from components.social_media import render_social_media_campaign
-from components.audience_analyzer import render_audience_analyzer
 from components.seo_analyzer import render_seo_analyzer
 from components.brand_values import render_brand_values
 from components.icp_definition import render_icp_definition
@@ -107,7 +106,7 @@ def render_dashboard():
         st.title("AI Marketing Assistant")
         
         # Navigation buttons
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             if st.button("Generate Content Marketing", type="primary"):
@@ -116,9 +115,6 @@ def render_dashboard():
             if st.button("Create Social Media Campaign"):
                 st.session_state.selected_option = "social"
         with col3:
-            if st.button("Analyze Target Audience"):
-                st.session_state.selected_option = "audience"
-        with col4:
             if st.button("Generate SEO recommendations"):
                 st.session_state.selected_option = "seo"
         
@@ -127,8 +123,6 @@ def render_dashboard():
             render_content_generator()
         elif st.session_state.selected_option == "social":
             render_social_media_campaign()
-        elif st.session_state.selected_option == "audience":
-            render_audience_analyzer()
         elif st.session_state.selected_option == "seo":
             render_seo_analyzer()
         else:
@@ -140,8 +134,7 @@ def render_dashboard():
             
             1. **Generate Content Marketing** - Create engaging blog posts, social media content, and more
             2. **Create Social Media Campaign** - Design comprehensive social media campaigns
-            3. **Analyze Target Audience** - Get insights about your target market
-            4. **Generate SEO Recommendations** - Optimize your content for search engines
+            3. **Generate SEO Recommendations** - Optimize your content for search engines
             
             Select an option above to begin!
             """)
