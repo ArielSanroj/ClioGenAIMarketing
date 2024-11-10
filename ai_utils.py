@@ -29,6 +29,33 @@ def generate_marketing_content(business_info: str, content_type: str) -> dict:
     )
     return json.loads(response.choices[0].message.content)
 
+def analyze_audience(data: dict) -> dict:
+    prompt = f'''
+    Analyze audience data and provide insights:
+    {json.dumps(data)}
+    
+    Provide analysis in JSON format:
+    {{
+        "demographics": {{
+            "age_groups": [],
+            "locations": [],
+            "interests": []
+        }},
+        "behavior": {{
+            "purchasing_patterns": [],
+            "platform_preferences": [],
+            "content_engagement": []
+        }},
+        "recommendations": []
+    }}
+    '''
+    
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return json.loads(response.choices[0].message.content)
+
 def analyze_market_trends(keywords, region=None) -> dict:
     """Analyze market trends for given keywords"""
     trend_prompt = f"""
