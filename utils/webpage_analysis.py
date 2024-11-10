@@ -18,9 +18,13 @@ def display_webpage_analysis(analysis):
     
     # Topics and semantic analysis
     st.markdown("### Content Topics")
+    topics = analysis['analysis']['topics']
+    # Generate relevance scores dynamically based on number of topics
+    relevance_scores = [90 - (i * 5) for i in range(len(topics))]
+    
     topics_df = pd.DataFrame({
-        'Topic': analysis['analysis']['topics'],
-        'Relevance': [90, 85, 80, 75, 70][:len(analysis['analysis']['topics'])]
+        'Topic': topics,
+        'Relevance': relevance_scores
     })
     
     fig = px.bar(topics_df, x='Topic', y='Relevance',
