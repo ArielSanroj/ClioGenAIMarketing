@@ -5,70 +5,63 @@ from ai_utils import generate_seo_recommendations, analyze_webpage
 import pandas as pd
 
 def render_seo_analyzer():
-    st.markdown("## SEO Recommendations")
+    """Render the SEO analyzer component"""
+    # Center align the content
+    st.markdown('<div class="centered-container">', unsafe_allow_html=True)
     
-    # Create tabs for direct content and webpage analysis
-    tab1, tab2 = st.tabs(["Content Analysis", "Webpage Analysis"])
+    # Show logo
+    st.image("logoclio.png", width=100)
     
-    with tab1:
-        content = st.text_area("Paste your content for SEO analysis", height=200)
-        
-        if st.button("Generate SEO Recommendations") and content:
-            with st.spinner("Analyzing content..."):
-                seo_analysis = generate_seo_recommendations(content)
-                display_seo_analysis(seo_analysis)
-
-    with tab2:
-        url = st.text_input("Enter webpage URL for analysis", placeholder="https://example.com")
-        
-        if st.button("Analyze Webpage") and url:
-            with st.spinner("Analyzing webpage..."):
+    st.markdown("## Website Analysis")
+    st.markdown("Let's analyze your website to optimize its SEO performance")
+    
+    # URL input
+    url = st.text_input(
+        "Enter your website URL",
+        value=st.session_state.webpage_analysis.get('url', ''),
+        placeholder="https://example.com"
+    )
+    
+    # Analysis button
+    if st.button("Analyze Website", type="primary"):
+        if url:
+            with st.spinner("Analyzing your website..."):
                 webpage_analysis = analyze_webpage(url)
                 
                 if "error" in webpage_analysis:
                     st.error(f"Error analyzing webpage: {webpage_analysis['error']}")
                 else:
+                    # Save analysis results in session state
+                    st.session_state.webpage_analysis.update({
+                        'url': url,
+                        'analysis': webpage_analysis,
+                        'is_completed': True
+                    })
+                    
+                    # Display analysis results
                     display_webpage_analysis(webpage_analysis)
-
-def display_seo_analysis(analysis):
-    """Display SEO analysis results"""
-    # Keywords visualization
-    st.markdown("### Keyword Recommendations")
-    keywords_df = pd.DataFrame({
-        'Keyword': analysis['keywords'],
-        'Score': [85, 75, 70, 65, 60][:len(analysis['keywords'])]  # Mock scores
-    })
+                    
+                    # Show completion button
+                    if st.button("Complete Analysis", type="primary"):
+                        st.rerun()
+        else:
+            st.warning("Please enter a valid URL")
     
-    fig = px.bar(keywords_df, x='Keyword', y='Score',
-                title='Keyword Relevance Score',
-                color='Score',
-                color_continuous_scale='viridis')
-    st.plotly_chart(fig, use_container_width=True)
+    # Skip button
+    col1, col2 = st.columns([5, 1])
+    with col2:
+        if st.button("Skip", type="secondary"):
+            st.session_state.webpage_analysis['is_completed'] = True
+            st.rerun()
     
-    # Meta description
-    st.markdown("### Meta Description")
-    st.text_area("Suggested meta description",
-                analysis['meta_description'],
-                height=100)
-    
-    # Title suggestions
-    st.markdown("### Title Suggestions")
-    for title in analysis['title_suggestions']:
-        st.markdown(f"- {title}")
-    
-    # Content improvements
-    st.markdown("### Content Improvement Suggestions")
-    for improvement in analysis['content_improvements']:
-        st.markdown(f"- {improvement}")
-    
-    # Technical suggestions
-    st.markdown("### Technical SEO Suggestions")
-    for suggestion in analysis['technical_suggestions']:
-        st.markdown(f"- {suggestion}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 def display_webpage_analysis(analysis):
-    """Display webpage analysis results"""
+    """Display webpage analysis results with improved styling"""
     st.markdown(f"### Analysis Results for: {analysis['domain']}")
+    
+    # Progress indicator
+    st.progress(1.0)
     
     # Current metadata
     with st.expander("Current Metadata", expanded=True):
@@ -80,7 +73,7 @@ def display_webpage_analysis(analysis):
     st.markdown("### Content Topics")
     topics_df = pd.DataFrame({
         'Topic': analysis['analysis']['topics'],
-        'Relevance': [90, 85, 80, 75, 70][:len(analysis['analysis']['topics'])]  # Mock scores
+        'Relevance': [90, 85, 80, 75, 70][:len(analysis['analysis']['topics'])]
     })
     
     fig = px.bar(topics_df, x='Topic', y='Relevance',
