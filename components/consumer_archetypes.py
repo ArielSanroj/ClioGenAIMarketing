@@ -1,7 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 
 def load_archetype_data():
     """Load data from Excel files"""
@@ -13,150 +11,106 @@ def load_archetype_data():
         st.error(f"Error loading archetype data: {str(e)}")
         return None, None
 
-def create_archetype_visualization(df):
-    """Create visualization for archetypes"""
-    try:
-        # Archetype score visualization
-        fig = px.bar(df, 
-                    x='Name',
-                    y='Score',
-                    title='Consumer Archetypes Distribution',
-                    color='Score',
-                    color_continuous_scale='viridis')
-        fig.update_layout(
-            xaxis_title="Archetype",
-            yaxis_title="Score",
-            showlegend=False
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Display archetype details
-        for _, row in df.iterrows():
-            with st.expander(f"📊 {row['Name']} - Score: {row['Score']}"):
-                st.markdown(f"**Description:** {row['Description']}")
-                st.markdown("**Key Characteristics:**")
-                characteristics = row['Characteristics'].split(',')
-                for char in characteristics:
-                    st.markdown(f"- {char.strip()}")
-                
-    except Exception as e:
-        st.error(f"Error creating archetype visualization: {str(e)}")
+def render_archetype_card(name, description, color):
+    """Render an archetype card with circle icon"""
+    st.markdown(f"""
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: flex-start;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background-color: {color}; margin-right: 20px; flex-shrink: 0;"></div>
+                <div>
+                    <h3 style="margin: 0; color: #28264D;">{name}</h3>
+                    <p style="color: #4A4867; margin-top: 10px;">{description}</p>
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
-def create_subscale_visualization(df):
-    """Create visualization for subscales"""
-    try:
-        # Create sunburst chart for subscales
-        fig = px.sunburst(df,
-                         path=['Category', 'Subscale'],
-                         values='Value',
-                         color='Value',
-                         color_continuous_scale='viridis',
-                         title='Consumer Subscales Distribution')
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Display subscale details by category
-        for category in df['Category'].unique():
-            with st.expander(f"📈 {category} Subscales"):
-                category_data = df[df['Category'] == category]
-                for _, row in category_data.iterrows():
-                    st.markdown(f"**{row['Subscale']}** (Score: {row['Value']})")
-                    st.markdown(f"_{row['Description']}_")
-                    st.markdown("---")
-                
-    except Exception as e:
-        st.error(f"Error creating subscale visualization: {str(e)}")
-
-def create_comparison_view(archetypes_df, subscales_df):
-    """Create comparison visualization between archetypes and subscales"""
-    try:
-        st.markdown("### Archetype-Subscale Relationship Analysis")
-        
-        # Create a correlation matrix visualization (mock data for demonstration)
-        categories = subscales_df['Category'].unique()
-        archetypes = archetypes_df['Name'].unique()
-        
-        # Create a sample correlation matrix
-        correlation_data = []
-        for archetype in archetypes:
-            row = []
-            for category in categories:
-                # Generate a mock correlation value between 0 and 1
-                correlation = abs(hash(f"{archetype}-{category}") % 100) / 100
-                row.append(correlation)
-            correlation_data.append(row)
-        
-        fig = go.Figure(data=go.Heatmap(
-            z=correlation_data,
-            x=categories,
-            y=archetypes,
-            colorscale='Viridis',
-            hoverongaps=False))
-        
-        fig.update_layout(
-            title="Archetype-Category Correlation Matrix",
-            xaxis_title="Categories",
-            yaxis_title="Archetypes"
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-    except Exception as e:
-        st.error(f"Error creating comparison view: {str(e)}")
+def render_subscale_card(title, interpretation, marketing_goal, consumer_type, color):
+    """Render a subscale card"""
+    st.markdown(f"""
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: flex-start;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background-color: {color}; margin-right: 20px; flex-shrink: 0;"></div>
+                <div>
+                    <h3 style="margin: 0; color: #28264D;">{title}</h3>
+                    <p style="color: #4A4867; margin-top: 10px;"><strong>Interpretation:</strong> {interpretation}</p>
+                    <p style="color: #4A4867;"><strong>Marketing goal:</strong> {marketing_goal}</p>
+                    <p style="color: #4A4867;"><strong>Consumer type:</strong> {consumer_type}</p>
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
 def render_consumer_archetypes():
     """Render the consumer archetypes display"""
-    st.markdown("## Consumer Archetypes Analysis")
-    
     # Load data
     archetypes_df, subscales_df = load_archetype_data()
     
     if archetypes_df is None or subscales_df is None:
         st.warning("Unable to load archetype data. Please check the Excel files.")
         return
-    
-    # Create tabs for different views
-    tabs = st.tabs(["Archetypes", "Subscales", "Comparison"])
-    
-    with tabs[0]:
-        st.subheader("Consumer Archetypes")
-        create_archetype_visualization(archetypes_df)
-        
-        # Raw data view
-        with st.expander("View Raw Archetype Data"):
-            st.dataframe(archetypes_df)
-    
-    with tabs[1]:
-        st.subheader("Consumer Subscales")
-        create_subscale_visualization(subscales_df)
-        
-        # Raw data view
-        with st.expander("View Raw Subscale Data"):
-            st.dataframe(subscales_df)
-    
-    with tabs[2]:
-        create_comparison_view(archetypes_df, subscales_df)
-    
-    # Export functionality
-    st.markdown("### Export Data")
-    col1, col2 = st.columns(2)
+
+    # Initialize view state if not exists
+    if 'archetype_view' not in st.session_state:
+        st.session_state.archetype_view = 'archetypes'
+
+    # Define archetype colors
+    archetype_colors = {
+        'Autonomous': '#FFE4D6',
+        'Impulsive': '#E7D6FF',
+        'Isolative': '#FFE4A0',
+        'Avoidant': '#FF6B4A'
+    }
+
+    # Navigation buttons
+    col1, col2 = st.columns([1, 1])
     
     with col1:
-        csv = archetypes_df.to_csv(index=False)
-        st.download_button(
-            label="Download Archetypes CSV",
-            data=csv,
-            file_name="consumer_archetypes.csv",
-            mime="text/csv"
-        )
+        if st.button("Go back"):
+            st.session_state.selected_option = None
+            st.rerun()
     
     with col2:
-        csv = subscales_df.to_csv(index=False)
-        st.download_button(
-            label="Download Subscales CSV",
-            data=subscales_df.to_csv(index=False),
-            file_name="consumer_subscales.csv",
-            mime="text/csv"
-        )
+        if st.session_state.archetype_view == 'archetypes':
+            if st.button("View subscales"):
+                st.session_state.archetype_view = 'subscales'
+                st.rerun()
+
+    # Display appropriate view
+    if st.session_state.archetype_view == 'archetypes':
+        st.markdown("## Archetypes")
+        
+        # Display archetype cards
+        for _, row in archetypes_df.iterrows():
+            name = row['Name']
+            if name in archetype_colors:
+                render_archetype_card(
+                    name=name,
+                    description=row['Description'],
+                    color=archetype_colors[name]
+                )
+    else:
+        st.markdown("## Subscales")
+        
+        # Display subscale cards
+        subscale_titles = {
+            'Autonomous': 'Focus on solving the problem - Autonomous',
+            'Impulsive': 'Tension reduction - Impulsive',
+            'Isolative': 'Keep it to oneself - Isolative',
+            'Avoidant': 'Indulge in illusions - Avoidant'
+        }
+
+        for archetype, title in subscale_titles.items():
+            subscale_data = subscales_df[subscales_df['Category'] == archetype].iloc[0] if not subscales_df[subscales_df['Category'] == archetype].empty else None
+            
+            if subscale_data is not None:
+                render_subscale_card(
+                    title=title,
+                    interpretation=subscale_data['Description'],
+                    marketing_goal=subscale_data.get('Marketing Goal', ''),
+                    consumer_type=subscale_data.get('Consumer Type', ''),
+                    color=archetype_colors[archetype]
+                )
 
 if __name__ == "__main__":
     render_consumer_archetypes()
