@@ -35,41 +35,60 @@ def generate_content_for_all_archetypes(story: str, content_type: str, platform:
     results = {}
     
     for archetype, traits in archetypes.items():
-        prompt = f"""
-        Story: {story}
-        Content Type: {content_type}
-        Platform: {platform}
-        Base Tone: {tone}
-        
-        Archetype: {archetype}
-        Archetype Tone: {traits['tone']}
-        Content Focus: {traits['focus']}
-        Writing Style: {traits['style']}
-        """
-        
         try:
-            content = generate_marketing_content(prompt, content_type)
+            # Create prompt for this archetype
+            prompt = f"""
+            Story: {story}
+            Content Type: {content_type}
+            Platform: {platform}
+            Base Tone: {tone}
             
-            # Get emotional profile
-            emotional_profile = st.session_state.emotion_engine.analyze_emotional_context(
-                archetype=archetype,
-                brand_values=getattr(st.session_state, 'brand_values', {}),
-                audience_data={'archetype': archetype}
-            )
+            Archetype: {archetype}
+            Archetype Tone: {traits['tone']}
+            Content Focus: {traits['focus']}
+            Writing Style: {traits['style']}
+            """
             
-            if emotional_profile:
+            # Generate content with proper error handling
+            try:
+                content = generate_marketing_content(prompt, content_type)
+            except Exception as e:
+                content = {
+                    'error': f"Content generation error: {str(e)}",
+                    'title': f"Error - {archetype}",
+                    'content': None,
+                    'keywords': [],
+                    'target_audience': ''
+                }
+            
+            # Get emotional profile with proper error handling
+            try:
+                emotional_profile = st.session_state.emotion_engine.analyze_emotional_context(
+                    archetype=archetype,
+                    brand_values=getattr(st.session_state, 'brand_values', {}),
+                    audience_data={'archetype': archetype}
+                )
+                
+                if emotional_profile:
+                    content['emotional_profile'] = {
+                        'primary_emotion': emotional_profile.primary_emotion,
+                        'intensity': emotional_profile.intensity,
+                        'triggers': emotional_profile.psychological_triggers
+                    }
+            except Exception as e:
                 content['emotional_profile'] = {
-                    'primary_emotion': emotional_profile.primary_emotion,
-                    'intensity': emotional_profile.intensity,
-                    'triggers': emotional_profile.psychological_triggers
+                    'primary_emotion': archetype,
+                    'intensity': 0.5,
+                    'triggers': []
                 }
             
             results[archetype] = content
             
         except Exception as e:
             results[archetype] = {
-                'error': str(e),
-                'content': f"Error generating content for {archetype}"
+                'error': f"Error processing {archetype}: {str(e)}",
+                'content': None,
+                'emotional_profile': None
             }
     
     return results
@@ -305,15 +324,18 @@ def render_content_generator():
                     
                     st.session_state.content_form_state['generated_content'] = all_content
                     
-                    # Save to database
+                    # Save to database with proper error handling
                     for archetype, content in all_content.items():
                         if content and content.get('content'):
-                            db.save_campaign(
-                                business_name=f"{story[:50]}_{archetype}",
-                                campaign_type=content_type,
-                                content=content['content'],
-                                emotional_profile=content.get('emotional_profile', {})
-                            )
+                            try:
+                                db.save_campaign(
+                                    business_name=f"{story[:50]}_{archetype}",
+                                    campaign_type=content_type,
+                                    content=content['content'],
+                                    emotional_profile=content.get('emotional_profile', {})
+                                )
+                            except Exception as e:
+                                st.warning(f"Could not save {archetype} content to database: {str(e)}")
                     
                     st.rerun()
                     
@@ -332,12 +354,15 @@ def render_content_generator():
                 "Autonomous", "Impulsive", "Avoidant", "Isolated"
             ])
             
-            all_content = st.session_state.content_form_state['generated_content']
             archetypes = ["autonomous", "impulsive", "avoidant", "isolated"]
             
             for tab, archetype in zip(tabs, archetypes):
                 with tab:
-                    content = all_content.get(archetype, {})
+                    content = st.session_state.content_form_state['generated_content'].get(archetype, {})
+                    if not content:
+                        st.info(f"No content generated for {archetype} archetype yet.")
+                        continue
+                        
                     if content.get('error'):
                         st.error(content['error'])
                         continue
