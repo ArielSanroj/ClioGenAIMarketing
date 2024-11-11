@@ -1,0 +1,75 @@
+utonomous
+<div style="margin-top: 1rem; color: #4A4867;">
+            <p style="margin: 0 0 1rem; line-height: 1.6;">This archetype is aimed at clients who seek effective solutions and focus on quick results. Ideal for products that emphasize efficiency, performance, and autonomy.</p>
+            <p style="margin: 0 0 1rem; line-height: 1.6;">Clients who frequently search for detailed information, download whitepapers, attend webinars.</p>
+            <p style="margin: 0 0 1rem; line-height: 1.6;">Campaigns that showcase success stories, concrete data on product ROI, and use cases focused on results.</p>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #E5E7EB;">
+            <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.75rem; line-height: 1.5;">Profile Example:</h4>
+            <p style="color: #4A4867; margin: 0; line-height: 1.6;">
+                María, Project Manager, 35 years old
+            </p>
+            <p style="color: #4A4867; margin: 0.5rem 0 0; line-height: 1.6;">
+                Seeks tools that optimize her time and give her full control
+            </p>
+        </div>
+    </div>
+</div>
+
+Impulsive
+<div style="margin-top: 1rem; color: #4A4867;">
+            <p style="margin: 0 0 1rem; line-height: 1.6;">Applies to clients with reactive behaviors and difficulty managing emotions. Products that provide emotional support, quick solutions to unexpected problems, or stability would be attractive.</p>
+            <p style="margin: 0 0 1rem; line-height: 1.6;">Clients who respond to limited-time offers, make unplanned purchases, participate in contests.</p>
+            <p style="margin: 0 0 1rem; line-height: 1.6;">Use emotional messages highlighting the product's speed and ease, including trust-building testimonials.</p>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #E5E7EB;">
+            <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.75rem; line-height: 1.5;">Profile Example:</h4>
+            <p style="color: #4A4867; margin: 0; line-height: 1.6;">
+                Juan, University Student, 22 years old
+            </p>
+            <p style="color: #4A4867; margin: 0.5rem 0 0; line-height: 1.6;">
+                Attracted to the latest trends and flash offers
+            </p>
+        </div>
+    </div>
+</div>
+
+Isolative
+<div style="margin-top: 1rem; color: #4A4867;">
+            <p style="margin: 0 0 1rem; line-height: 1.6;">Suited to clients who seek enjoyment and want to avoid discomfort. Marketing that emphasizes simplicity, pleasure, and well-being can resonate with this profile.</p>
+            <p style="margin: 0 0 1rem; line-height: 1.6;">Clients interested in content related to well-being, relaxation, easy-to-use products.</p>
+            <p style="margin: 0 0 1rem; line-height: 1.6;">Content that conveys comfort and joy, highlighting the stress-free benefits the product provides.</p>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #E5E7EB;">
+            <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.75rem; line-height: 1.5;">Profile Example:</h4>
+            <p style="color: #4A4867; margin: 0; line-height: 1.6;">
+                Carlos, Independent Writer, 45 years old
+            </p>
+            <p style="color: #4A4867; margin: 0.5rem 0 0; line-height: 1.6;">
+                Prefers personalized solutions and values privacy
+            </p>
+        </div>
+    </div>
+</div>
+
+Avoidant
+<div style="margin-top: 1rem; color: #4A4867;">
+            <p style="margin: 0 0 1rem; line-height: 1.6;">This archetype fits clients who value independence and prefer discreet, personal solutions. Offers prioritizing privacy and gradual connection would be ideal.</p>
+            <p style="margin: 0 0 1rem; line-height: 1.6;">Clients who prefer online interactions, avoid phone calls, value personalization.</p>
+            <p style="margin: 0 0 1rem; line-height: 1.6;">Offers of personalized services, emphasizing privacy and long-term support.</p>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #E5E7EB;">
+            <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.75rem; line-height: 1.5;">Profile Example:</h4>
+            <p style="color: #4A4867; margin: 0; line-height: 1.6;">
+                Laura, Health Professional, 40 years old
+            </p>
+            <p style="color: #4A4867; margin: 0.5rem 0 0; line-height: 1.6;">
+                Seeks products that offer comfort and reduce stress
+            </p>
+        </div>
+    </div>
+</div>

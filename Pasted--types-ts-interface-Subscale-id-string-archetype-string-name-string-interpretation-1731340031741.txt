@@ -1,0 +1,167 @@
+// types.ts
+interface Subscale {
+  id: string;
+  archetype: string;
+  name: string;
+  interpretation: string;
+  objective: string;
+  consumerType: string;
+  color: string;
+}
+
+// subscalesData.ts
+export const subscalesData: Record<string, Subscale[]> = {
+  autonomous: [
+    {
+      id: 'focus-problem',
+      archetype: 'autonomous',
+      name: 'Focus on solving the problem',
+      interpretation: 'Consumers with high logical reasoning and organization skills. They seek practical and efficient solutions to their problems.',
+      objective: 'Highlight product efficiency and functionality. - Provide detailed information and technical data. - Show how the product solves specific problems.',
+      consumerType: 'Goal-oriented professionals, leaders, entrepreneurs. - Value effectiveness and performance. - Want tools to optimize their productivity.',
+      color: '#FFE4D6'
+    },
+    {
+      id: 'strive-succeed',
+      archetype: 'autonomous',
+      name: 'Strive and succeed',
+      interpretation: 'Highly motivated, perseverant, and ambitious consumers. They seek personal growth and success.',
+      objective: 'Emphasize achievement and personal growth. - Use success stories and case studies. - Present the product as a tool to reach goals.',
+      consumerType: 'Entrepreneurs, developing professionals, outstanding students. - Seek opportunities to advance in their careers and skills.',
+      color: '#FFE4D6'
+    },
+    {
+      id: 'worry',
+      archetype: 'autonomous',
+      name: 'Worry',
+      interpretation: 'Consumers who experience stress and anxiety, concerned about risks or potential problems.',
+      objective: 'Convey security and reliability. - Offer guarantees, return policies, and strong customer support. - Highlight product quality and reliability.',
+      consumerType: 'Cautious people, parents, professionals with high responsibility. - Value safety and seek to minimize risks in their purchasing decisions.',
+      color: '#FFE4D6'
+    },
+    {
+      id: 'ignore-problem-inverse',
+      archetype: 'autonomous',
+      name: 'Ignore the problem (inverse)',
+      interpretation: 'Consumers who need to learn to disconnect and enjoy recreational activities.',
+      objective: 'Promote work-life balance. - Highlight product features that facilitate relaxation and leisure. - Offer solutions to disconnect.',
+      consumerType: 'Busy professionals, workaholics, highly stressed individuals. - Seek opportunities to relax and care for their personal well-being.',
+      color: '#FFE4D6'
+    }
+  ],
+  impulsive: [
+    {
+      id: 'lack-coping',
+      archetype: 'impulsive',
+      name: 'Lack of coping',
+      interpretation: 'Consumers who may feel demotivated or lack purpose, participating little actively in problem-solving.',
+      objective: 'Create emotional connections and a sense of purpose. - Develop campaigns that inspire and motivate. - Show how the product can bring meaning or improve their life.',
+      consumerType: 'Young adults searching for identity, people in personal transition. - Respond to messages that help them find direction and purpose.',
+      color: '#E6E6FA'
+    },
+    {
+      id: 'tension-reduction',
+      archetype: 'impulsive',
+      name: 'Tension reduction',
+      interpretation: 'Consumers with low frustration tolerance, seeking immediate gratification and quick solutions.',
+      objective: 'Offer instant satisfaction and ease of use. - Promote limited-time offers and immediate rewards. - Highlight product speed and simplicity.',
+      consumerType: 'Impulsive buyers, tech enthusiasts, trend seekers. - Value immediacy and convenience in their purchases.',
+      color: '#E6E6FA'
+    },
+    {
+      id: 'self-blame',
+      archetype: 'impulsive',
+      name: 'Self-blame',
+      interpretation: 'Consumers who tend to blame themselves or others, feeling frustration or discontent.',
+      objective: 'Empower the consumer and offer solutions. - Use positive messages that boost self-esteem. - Present the product as a tool to improve their situation.',
+      consumerType: 'People seeking change, interested in personal development. - Need to feel supported and capable of overcoming obstacles.',
+      color: '#E6E6FA'
+    }
+  ],
+  // ... Similar structure for avoidant and isolated archetypes
+];
+
+// SubscalesView.tsx
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+
+const SubscalesView = () => {
+  const allSubscales = Object.values(subscalesData).flat();
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        <header className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-4">
+            <img src="/api/placeholder/48/48" alt="Clio Logo" className="w-12 h-12" />
+            <h1 className="text-2xl font-bold">Subscales</h1>
+          </div>
+          <button
+            className="px-6 py-2 bg-indigo-900 text-white rounded-lg hover:bg-indigo-800 transition-colors"
+          >
+            Go back
+          </button>
+        </header>
+
+        <main className="space-y-6">
+          {allSubscales.map((subscale) => (
+            <Card key={subscale.id} className="w-full">
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div 
+                    className="w-16 h-16 rounded-full flex-shrink-0" 
+                    style={{ backgroundColor: subscale.color }}
+                  />
+                  <div className="flex-1 space-y-4">
+                    <CardTitle className="text-xl font-semibold">
+                      {subscale.name} - {subscale.archetype}
+                    </CardTitle>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="font-medium mb-1">Interpretation:</h3>
+                        <p className="text-gray-700">{subscale.interpretation}</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium mb-1">Marketing Goal:</h3>
+                        <p className="text-gray-700">{subscale.objective}</p>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium mb-1">Consumer Type:</h3>
+                        <p className="text-gray-700">{subscale.consumerType}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </main>
+
+        <footer className="mt-8 pt-6 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex space-x-4">
+              <a href="#" className="text-gray-600 hover:text-gray-900">Contact Us</a>
+              <span className="text-gray-300">|</span>
+              <a href="#" className="text-gray-600 hover:text-gray-900">Privacy Policy</a>
+            </div>
+            <div className="flex space-x-4">
+              {['facebook', 'instagram', 'youtube', 'twitter', 'whatsapp', 'linkedin'].map(social => (
+                <a 
+                  key={social} 
+                  href="#" 
+                  className="w-6 h-6 rounded-full bg-gray-600 hover:bg-gray-800 transition-colors"
+                  aria-label={social}
+                />
+              ))}
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+};
+
+export default SubscalesView;

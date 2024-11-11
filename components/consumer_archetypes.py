@@ -4,11 +4,11 @@ import pandas as pd
 def render_archetype_card(name, data):
     """Render an archetype card with circle icon and profile information"""
     st.markdown(f"""
-        <div style="background: #FFFFFF; padding: 1.5rem; border-radius: 12px; margin: 1.25rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <div style="background: #FFFFFF; padding: 1.5rem; border-radius: 12px; margin: 1.25rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="display: flex; align-items: flex-start; gap: 1.25rem;">
                 <div style="width: 4rem; height: 4rem; border-radius: 50%; background-color: {data['color']}; flex-shrink: 0;"></div>
                 <div style="flex-grow: 1;">
-                    <h3 style="margin: 0; color: #28264D; font-size: 1.25rem; font-weight: 500; line-height: 1.5;">{name}</h3>
+                    <h3 style="margin: 0; color: #1E1B4B; font-size: 1.25rem; font-weight: 600; line-height: 1.5;">{name}</h3>
                     
                     <div style="margin-top: 1rem; color: #4A4867;">
                         <p style="margin: 0 0 1rem; line-height: 1.6;">{data['description']}</p>
@@ -17,7 +17,7 @@ def render_archetype_card(name, data):
                     </div>
 
                     <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #E5E7EB;">
-                        <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.75rem; line-height: 1.5;">Profile Example:</h4>
+                        <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.75rem; color: #1E1B4B;">Profile Example:</h4>
                         <p style="color: #4A4867; margin: 0; line-height: 1.6;">
                             {data['profile']['name']}, {data['profile']['occupation']}, {data['profile']['age']} years old
                         </p>
@@ -33,16 +33,27 @@ def render_archetype_card(name, data):
 def render_subscale_card(name, data):
     """Render a subscale card with matching styling"""
     st.markdown(f"""
-        <div style="background: #FFFFFF; padding: 1.5rem; border-radius: 12px; margin: 1.25rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+        <div style="background: #FFFFFF; padding: 1.5rem; border-radius: 12px; margin: 1.25rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="display: flex; align-items: start; gap: 1.25rem;">
                 <div style="width: 4rem; height: 4rem; border-radius: 50%; background-color: {data['color']}; flex-shrink: 0;"></div>
                 <div style="flex-grow: 1;">
-                    <h3 style="margin: 0; color: #28264D; font-size: 1.25rem; font-weight: 500; line-height: 1.5;">{name}</h3>
+                    <h3 style="margin: 0; color: #1E1B4B; font-size: 1.25rem; font-weight: 600; line-height: 1.5;">{name}</h3>
                     
                     <div style="margin-top: 1rem; color: #4A4867;">
-                        <p style="margin: 0 0 1rem; line-height: 1.6;"><span style="font-weight: 500;">Interpretation:</span> {data['interpretation']}</p>
-                        <p style="margin: 0 0 1rem; line-height: 1.6;"><span style="font-weight: 500;">Marketing goal:</span> {data['marketing_goal']}</p>
-                        <p style="margin: 0; line-height: 1.6;"><span style="font-weight: 500;">Consumer type:</span> {data['consumer_type']}</p>
+                        <div style="margin-bottom: 1rem;">
+                            <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.5rem; color: #1E1B4B;">Interpretation:</h4>
+                            <p style="margin: 0; line-height: 1.6;">{data['interpretation']}</p>
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem;">
+                            <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.5rem; color: #1E1B4B;">Marketing goal:</h4>
+                            <p style="margin: 0; line-height: 1.6;">{data['marketing_goal']}</p>
+                        </div>
+                        
+                        <div>
+                            <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.5rem; color: #1E1B4B;">Consumer type:</h4>
+                            <p style="margin: 0; line-height: 1.6;">{data['consumer_type']}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -54,27 +65,27 @@ def render_consumer_archetypes():
     st.markdown("""
         <style>
         .stApp {
-            background-color: #FFFFFF;
+            background-color: #F9F9FB;
         }
         .stButton>button[kind="primary"] {
-            padding: 0.875rem 1.5rem;
-            width: 100%;
-            height: auto;
             background-color: #1E1B4B;
-            font-size: 1rem;
-            font-weight: 500;
+            color: white;
             border-radius: 0.5rem;
-            margin-top: 1rem;
-            margin-bottom: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            border: none;
+            width: auto;
+            min-width: 120px;
         }
         .stButton>button[kind="secondary"] {
-            padding: 0.75rem 1.25rem;
             background-color: transparent;
             color: #1E1B4B;
             border: 1px solid #1E1B4B;
-            font-size: 1rem;
-            font-weight: 500;
             border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            width: auto;
+            min-width: 120px;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -88,28 +99,26 @@ def render_consumer_archetypes():
     if 'archetype_view' not in st.session_state:
         st.session_state.archetype_view = 'archetypes'
 
-    # Navigation buttons with correct styling
+    # Navigation header with correct styling
+    col1, col2 = st.columns([1, 11])
+    with col1:
+        if st.button("Go back", type="secondary"):
+            st.session_state.selected_option = None
+            st.rerun()
+    
+    st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0;">
+            <h2 style="font-size: 1.5rem; font-weight: 600; color: #1E1B4B; margin: 0;">
+                {st.session_state.archetype_view.capitalize()}
+            </h2>
+        </div>
+    """, unsafe_allow_html=True)
+    
     if st.session_state.archetype_view == 'archetypes':
-        col1, col2 = st.columns([1, 11])
-        with col1:
-            if st.button("Go back", type="secondary"):
-                st.session_state.selected_option = None
-                st.rerun()
-        
-        st.markdown('<h2 style="font-size: 1.5rem; font-weight: 500; margin: 1.25rem 0; line-height: 1.5; color: #28264D;">Archetypes</h2>', unsafe_allow_html=True)
-        
         if st.button("View subscales", type="primary"):
             st.session_state.archetype_view = 'subscales'
             st.rerun()
-    else:
-        col1, col2 = st.columns([1, 11])
-        with col1:
-            if st.button("Go back", type="secondary"):
-                st.session_state.archetype_view = 'archetypes'
-                st.rerun()
-        
-        st.markdown('<h2 style="font-size: 1.5rem; font-weight: 500; margin: 1.25rem 0; line-height: 1.5; color: #28264D;">Subscales</h2>', unsafe_allow_html=True)
-
+    
     # Display appropriate view
     if st.session_state.archetype_view == 'archetypes':
         archetype_data = {
