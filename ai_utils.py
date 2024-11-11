@@ -1,19 +1,32 @@
 import os
 from openai import OpenAI
 import json
-import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-import html
+from typing import Dict
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
-def generate_marketing_content(prompt: str, content_type: str) -> dict:
+def validate_inputs(story: str, content_type: str) -> bool:
+    """Validate input parameters before generating content"""
+    if not story or not story.strip():
+        return False
+    if not content_type or not content_type.strip():
+        return False
+    return True
+
+def generate_marketing_content(prompt: str, content_type: str) -> Dict:
+    """Generate marketing content using OpenAI's API with improved parsing and error handling"""
     try:
         system_message = """You are an expert marketing content generator. 
         Generate content that matches the provided type, tone, and platform. 
-        Include a compelling title, main content, relevant keywords, and target audience description."""
+        Format your response with the following clear sections:
+        
+        Title: [Create an engaging title]
+        Content: [Provide detailed main content]
+        Keywords: [List relevant keywords separated by commas]
+        Target Audience: [Describe the target audience]
+        
+        Make sure each section is clearly separated by newlines and properly labeled."""
         
         response = openai_client.chat.completions.create(
             model="gpt-4-1106-preview",
@@ -26,38 +39,64 @@ def generate_marketing_content(prompt: str, content_type: str) -> dict:
         )
         
         generated_text = response.choices[0].message.content
-        content_parts = generated_text.split('\n\n')
         
+        # Initialize content dictionary
         content_dict = {
             "title": "",
             "content": "",
             "keywords": [],
             "target_audience": "",
-            "tone": content_type,
-            "distribution_channels": []
+            "tone": content_type
         }
         
-        for part in content_parts:
-            if part.lower().startswith('title:'):
-                content_dict["title"] = part.replace('Title:', '').strip()
-            elif part.lower().startswith('content:'):
-                content_dict["content"] = part.replace('Content:', '').strip()
-            elif part.lower().startswith('keywords:'):
-                keywords = part.replace('Keywords:', '').strip()
-                content_dict["keywords"] = [k.strip() for k in keywords.split(',')]
-            elif part.lower().startswith('target audience:'):
-                content_dict["target_audience"] = part.replace('Target Audience:', '').strip()
+        # Split the text into sections and parse
+        current_section = None
+        current_content = []
+        
+        for line in generated_text.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+            
+            if line.lower().startswith('title:'):
+                current_section = 'title'
+                content_dict['title'] = line.replace('Title:', '').strip()
+            elif line.lower().startswith('content:'):
+                if current_section == 'content':
+                    content_dict['content'] = '\n'.join(current_content)
+                current_section = 'content'
+                current_content = []
+            elif line.lower().startswith('keywords:'):
+                if current_section == 'content':
+                    content_dict['content'] = '\n'.join(current_content)
+                current_section = 'keywords'
+                keywords = line.replace('Keywords:', '').strip()
+                content_dict['keywords'] = [k.strip() for k in keywords.split(',')]
+            elif line.lower().startswith('target audience:'):
+                if current_section == 'content':
+                    content_dict['content'] = '\n'.join(current_content)
+                current_section = 'target_audience'
+                content_dict['target_audience'] = line.replace('Target Audience:', '').strip()
+            else:
+                if current_section == 'content':
+                    current_content.append(line)
+                elif current_section == 'target_audience':
+                    content_dict['target_audience'] += ' ' + line
+        
+        # Handle any remaining content
+        if current_section == 'content':
+            content_dict['content'] = '\n'.join(current_content)
         
         return content_dict
-    
+        
     except Exception as e:
+        print(f"Error generating content: {str(e)}")
         return {
-            "title": "Error Generating Content",
+            "title": "Error generating content",
             "content": f"An error occurred: {str(e)}",
             "keywords": [],
             "target_audience": "",
-            "tone": content_type,
-            "distribution_channels": []
+            "tone": content_type
         }
 
 def analyze_audience(data: dict) -> dict:
