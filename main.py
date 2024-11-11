@@ -12,14 +12,14 @@ def initialize_session_state():
     """Initialize the session state variables"""
     if 'brand_values' not in st.session_state:
         st.session_state.brand_values = {
-            'mission': '',
-            'values': [],
-            'virtues': [],
-            'is_completed': False
+            'mission': 'Example mission',
+            'values': ['value1', 'value2'],
+            'virtues': ['virtue1', 'virtue2'],
+            'is_completed': True  # Set to True to bypass welcome screen
         }
     if 'icp_data' not in st.session_state:
         st.session_state.icp_data = {
-            'knowledge_level': '',
+            'knowledge_level': 'I know my ICP',
             'current_question': 1,
             'demographics': {},
             'psychographics': {},
@@ -27,7 +27,7 @@ def initialize_session_state():
             'pain_points': [],
             'goals': [],
             'answers': {},
-            'is_completed': False
+            'is_completed': True  # Set to True to bypass ICP questionnaire
         }
     if 'webpage_analysis' not in st.session_state:
         st.session_state.webpage_analysis = {
@@ -36,9 +36,11 @@ def initialize_session_state():
             'is_completed': False
         }
     if 'selected_option' not in st.session_state:
-        st.session_state.selected_option = None
+        st.session_state.selected_option = 'archetypes'  # Set default to archetypes view
     if 'show_icp_questionnaire' not in st.session_state:
         st.session_state.show_icp_questionnaire = False
+    if 'archetype_view' not in st.session_state:
+        st.session_state.archetype_view = 'archetypes'
 
 def render_icp_summary():
     """Render the ICP summary view"""
@@ -77,22 +79,24 @@ def render_dashboard():
     """Render the main dashboard after onboarding is completed"""
     # Render sidebar and get selected option
     selected_option = render_sidebar()
+    
+    # Handle navigation from sidebar
     if selected_option:
         st.session_state.selected_option = selected_option
+        if selected_option == "archetypes":
+            render_consumer_archetypes()
+            return
     
     # Main content area
     main_container = st.container()
     
     with main_container:
-        # Handle ICP views
+        # Handle other views
         if st.session_state.selected_option == "icp_questionnaire":
             render_icp_definition()
             return
         elif st.session_state.selected_option == "icp_summary":
             render_icp_summary()
-            return
-        elif st.session_state.selected_option == "archetypes":
-            render_consumer_archetypes()
             return
         elif st.session_state.selected_option == "market_analysis":
             if st.session_state.webpage_analysis.get('is_completed'):
@@ -101,12 +105,15 @@ def render_dashboard():
             else:
                 render_seo_analyzer()
             return
+        elif st.session_state.selected_option == "archetypes":
+            render_consumer_archetypes()
+            return
         
-        # Title and navigation
+        # Default dashboard content
         st.title("AI Marketing Assistant")
         
         # Navigation buttons
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             if st.button("Generate Content Marketing", type="primary"):
@@ -117,6 +124,10 @@ def render_dashboard():
         with col3:
             if st.button("Generate SEO recommendations"):
                 st.session_state.selected_option = "seo"
+        with col4:
+            if st.button("View Consumer Archetypes"):
+                st.session_state.selected_option = "archetypes"
+                st.rerun()
         
         # Render selected component
         if st.session_state.selected_option == "content":
@@ -135,6 +146,7 @@ def render_dashboard():
             1. **Generate Content Marketing** - Create engaging blog posts, social media content, and more
             2. **Create Social Media Campaign** - Design comprehensive social media campaigns
             3. **Generate SEO Recommendations** - Optimize your content for search engines
+            4. **View Consumer Archetypes** - Analyze consumer behavior patterns and marketing strategies
             
             Select an option above to begin!
             """)
@@ -167,13 +179,8 @@ def main():
         st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
         render_icp_definition()
         st.markdown('</div>', unsafe_allow_html=True)
-    elif not st.session_state.webpage_analysis.get('is_completed', False):
-        # Show webpage analyzer after ICP questionnaire
-        st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
-        render_seo_analyzer()
-        st.markdown('</div>', unsafe_allow_html=True)
     else:
-        # Show main dashboard only after all steps are completed
+        # Show main dashboard after all steps are completed
         render_dashboard()
 
 if __name__ == "__main__":

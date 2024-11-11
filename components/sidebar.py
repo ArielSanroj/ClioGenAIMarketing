@@ -26,16 +26,13 @@ def render_sidebar():
                 # If completed, show summary
                 selected_option = "icp_summary"
         
-        # Handle market analysis specially
-        if st.button("Market analysis", key="menu_market_analysis"):
-            selected_option = "market_analysis"
-            # Set selected_option in session state
-            st.session_state.selected_option = "market_analysis"
-            st.rerun()
-        
-        # Other navigation buttons
+        # Handle other navigation buttons
         for label, value in menu_options.items():
-            if label not in ["View my ICP", "Market analysis"] and st.button(label, key=f"menu_{value}"):
+            if label not in ["View my ICP"] and st.button(label, key=f"menu_{value}"):
                 selected_option = value
-                
+                st.session_state.selected_option = value
+                if value == "archetypes":
+                    st.session_state.archetype_view = 'archetypes'
+                st.rerun()
+        
         return selected_option
