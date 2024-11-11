@@ -1,8 +1,58 @@
 import streamlit as st
 from ai_utils import generate_marketing_content
 from database import db
+from emotion_engine import EmotionEngine, EmotionalProfile
 import json
 import html
+import asyncio
+from typing import Dict, Optional, Any
+
+class ContentTemplate:
+    def __init__(self, archetype: str, tone: str):
+        self.archetype = archetype
+        self.tone = tone
+        self.templates = self._load_templates()
+
+    def _load_templates(self) -> Dict[str, str]:
+        """Load content templates based on archetype and tone"""
+        return {
+            'blog_post': """
+            Title: {title}
+            
+            {introduction}
+            
+            {main_points}
+            
+            {conclusion}
+            
+            Keywords: {keywords}
+            Target Audience: {target_audience}
+            """,
+            'social_post': """
+            {headline}
+            
+            {main_message}
+            
+            {call_to_action}
+            
+            {hashtags}
+            """,
+            'email': """
+            Subject: {subject}
+            
+            {greeting}
+            
+            {body}
+            
+            {closing}
+            
+            {signature}
+            """
+        }
+
+    def get_template(self, content_type: str) -> str:
+        """Get template for specific content type"""
+        return self.templates.get(content_type, self.templates['blog_post'])
 
 def initialize_session_state():
     """Initialize session state variables if they don't exist"""
@@ -13,8 +63,11 @@ def initialize_session_state():
             'platform': '',
             'tone': '',
             'competitor_insights': '',
-            'generated_content': None
+            'generated_content': None,
+            'performance_metrics': None
         }
+    if 'emotion_engine' not in st.session_state:
+        st.session_state.emotion_engine = EmotionEngine()
 
 def sanitize_input(text: str) -> str:
     """Sanitize input text to prevent injection and formatting issues"""
@@ -22,6 +75,45 @@ def sanitize_input(text: str) -> str:
         return ""
     sanitized = html.escape(text.strip())
     return ' '.join(sanitized.split())
+
+async def generate_content_async(prompt: str, content_type: str, 
+                               emotion_engine: EmotionEngine, 
+                               brand_values: dict,
+                               audience_data: dict) -> Dict[str, Any]:
+    """Generate content asynchronously with emotional optimization"""
+    try:
+        # Get emotional profile
+        emotional_profile = emotion_engine.analyze_emotional_context(
+            archetype=audience_data.get('archetype', 'autonomous'),
+            brand_values=brand_values,
+            audience_data=audience_data
+        )
+        
+        # Generate base content
+        content = generate_marketing_content(prompt, content_type)
+        
+        # Optimize content if emotional profile is available
+        if emotional_profile and content.get('content'):
+            content['content'] = emotion_engine.optimize_content(
+                content['content'],
+                emotional_profile
+            )
+            content['emotional_profile'] = {
+                'primary_emotion': emotional_profile.primary_emotion,
+                'intensity': emotional_profile.intensity,
+                'triggers': emotional_profile.psychological_triggers
+            }
+        
+        return content
+    except Exception as e:
+        print(f"Error in async content generation: {str(e)}")
+        return {
+            "error": str(e),
+            "title": "Error generating content",
+            "content": "An error occurred during content generation.",
+            "keywords": [],
+            "target_audience": ""
+        }
 
 def render_content_generator():
     # Apply custom styles
@@ -36,100 +128,6 @@ def render_content_generator():
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
             height: 100%;
             margin-bottom: 2rem;
-        }
-        .stTextInput>div>div>input, .stTextArea>div>div>textarea {
-            background-color: white !important;
-            border: 1px solid #E5E7EB !important;
-            border-radius: 12px !important;
-            padding: 1.5rem !important;
-            font-size: 1rem !important;
-            color: #1E1B4B !important;
-            min-height: 150px !important;
-            box-shadow: none !important;
-            margin-bottom: 24px !important;
-            transition: all 0.2s ease !important;
-        }
-        .stTextInput>div>div>input:hover, .stTextArea>div>div>textarea:hover {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-            border-color: #D1D5DB !important;
-        }
-        .stTextInput>div>div>input::placeholder, .stTextArea>div>div>textarea::placeholder {
-            color: #6B7280 !important;
-            opacity: 1 !important;
-            font-size: 1rem !important;
-        }
-        .stSelectbox>div>div>div {
-            background-color: white !important;
-            border: 1px solid #E5E7EB !important;
-            border-radius: 12px !important;
-            padding: 1.5rem !important;
-            color: #1E1B4B !important;
-            font-size: 1rem !important;
-            height: 56px !important;
-            min-height: 56px !important;
-            display: flex !important;
-            align-items: center !important;
-            cursor: pointer !important;
-            margin-bottom: 24px !important;
-            transition: all 0.2s ease !important;
-        }
-        .stSelectbox>div>div>div:hover {
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-            border-color: #D1D5DB !important;
-        }
-        .stSelectbox>div>div>div::after {
-            content: '';
-            border-style: solid;
-            border-width: 2px 2px 0 0;
-            display: inline-block;
-            padding: 3px;
-            transform: rotate(135deg);
-            position: absolute;
-            right: 1.5rem;
-            top: 50%;
-            margin-top: -4px;
-            color: #1E1B4B !important;
-        }
-        /* Remove default selectbox arrow */
-        .stSelectbox select {
-            -webkit-appearance: none !important;
-            -moz-appearance: none !important;
-            appearance: none !important;
-        }
-        .label-text {
-            color: #1E1B4B !important;
-            font-weight: 600 !important;
-            margin-bottom: 1rem !important;
-            font-size: 1rem !important;
-            display: block !important;
-            line-height: 1.5 !important;
-            margin-top: 1.5rem !important;
-            letter-spacing: -0.01em !important;
-        }
-        .stButton>button {
-            background-color: #1E1B4B !important;
-            color: white !important;
-            border: none !important;
-            padding: 1rem 1.5rem !important;
-            border-radius: 12px !important;
-            font-weight: 600 !important;
-            width: 100% !important;
-            margin-top: 2rem !important;
-            transition: all 0.2s !important;
-            font-size: 1rem !important;
-            letter-spacing: 0.025em !important;
-            height: 56px !important;
-        }
-        .stButton>button:hover {
-            background-color: #2D2A5C !important;
-            transform: translateY(-1px) !important;
-        }
-        .generated-content-placeholder {
-            color: #6B7280 !important;
-            font-style: italic !important;
-            margin-top: 1rem !important;
-            line-height: 1.6 !important;
-            font-size: 1rem !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -149,88 +147,87 @@ def render_content_generator():
     with col1:
         st.markdown('<div class="card-container">', unsafe_allow_html=True)
         
-        st.markdown('<p class="label-text">What would you like to talk about?</p>', unsafe_allow_html=True)
+        # Form inputs
         story = st.text_area(
-            "Story Input",
+            "What would you like to talk about?",
             value=st.session_state.content_form_state['story'],
             placeholder="What is the story you want to tell",
-            label_visibility="collapsed"
+            key="story_input"
         )
 
-        st.markdown('<p class="label-text">Content Type</p>', unsafe_allow_html=True)
         content_type = st.selectbox(
             "Content Type",
             options=["", "Blog Post", "Social Media Post", "Email Newsletter", "Landing Page"],
-            key="content_type",
-            label_visibility="collapsed"
+            key="content_type"
         )
 
-        st.markdown('<p class="label-text">Platform</p>', unsafe_allow_html=True)
         platform = st.selectbox(
             "Platform",
             options=["", "Website", "LinkedIn", "Twitter", "Instagram", "Facebook"],
-            key="platform",
-            label_visibility="collapsed"
+            key="platform"
         )
 
-        st.markdown('<p class="label-text">Emotional tone</p>', unsafe_allow_html=True)
         tone = st.selectbox(
             "Emotional tone",
             options=["", "Professional", "Casual", "Inspirational", "Educational", "Persuasive"],
-            key="tone",
-            label_visibility="collapsed"
+            key="tone"
         )
 
-        st.markdown('<p class="label-text">Competitor Insights</p>', unsafe_allow_html=True)
         competitor_insights = st.text_area(
             "Competitor Insights",
             value=st.session_state.content_form_state['competitor_insights'],
             placeholder="Add any competitor insights or success strategies",
-            label_visibility="collapsed"
+            key="competitor_insights"
         )
         
         if st.button("Generate Content"):
-            # Sanitize inputs
-            sanitized_story = sanitize_input(story or "")
-            sanitized_insights = sanitize_input(competitor_insights or "")
-            
-            if not sanitized_story:
+            # Validate inputs
+            if not story.strip():
                 st.error("Please enter a story to generate content.")
                 return
                 
+            # Update session state
             st.session_state.content_form_state.update({
-                'story': sanitized_story,
+                'story': sanitize_input(story),
                 'content_type': content_type,
                 'platform': platform,
                 'tone': tone,
-                'competitor_insights': sanitized_insights
+                'competitor_insights': sanitize_input(competitor_insights)
             })
             
             with st.spinner("Generating content..."):
                 try:
+                    # Prepare the prompt
                     prompt = f"""
-                    Story: {sanitized_story}
+                    Story: {st.session_state.content_form_state['story']}
                     Content Type: {content_type}
                     Platform: {platform}
                     Tone: {tone}
-                    Competitor Insights: {sanitized_insights}
+                    Competitor Insights: {st.session_state.content_form_state['competitor_insights']}
                     """
                     
-                    # Include brand values and ICP data if available
-                    if hasattr(st.session_state, 'brand_values'):
-                        prompt += f"\nBrand Values: {json.dumps(st.session_state.brand_values)}"
-                    if hasattr(st.session_state, 'icp_data'):
-                        prompt += f"\nICP Data: {json.dumps(st.session_state.icp_data)}"
+                    # Add brand values and ICP data if available
+                    brand_values = getattr(st.session_state, 'brand_values', {})
+                    icp_data = getattr(st.session_state, 'icp_data', {})
                     
-                    content = generate_marketing_content(prompt, content_type)
+                    # Generate content asynchronously
+                    content = asyncio.run(generate_content_async(
+                        prompt=prompt,
+                        content_type=content_type,
+                        emotion_engine=st.session_state.emotion_engine,
+                        brand_values=brand_values,
+                        audience_data=icp_data
+                    ))
+                    
                     st.session_state.content_form_state['generated_content'] = content
                     
                     # Save to database if content was generated successfully
                     if content and content.get('content'):
                         db.save_campaign(
-                            business_name=sanitized_story[:50],
+                            business_name=st.session_state.content_form_state['story'][:50],
                             campaign_type=content_type,
-                            content=content['content']
+                            content=content['content'],
+                            emotional_profile=content.get('emotional_profile', {})
                         )
                     
                     st.rerun()
@@ -249,27 +246,28 @@ def render_content_generator():
             content = st.session_state.content_form_state['generated_content']
             st.success("Content generated successfully!")
             
-            # Title
+            # Display emotional profile if available
+            if content.get('emotional_profile'):
+                with st.expander("Emotional Analysis"):
+                    st.write("Primary Emotion:", content['emotional_profile']['primary_emotion'])
+                    st.write("Emotional Intensity:", f"{content['emotional_profile']['intensity']:.2f}")
+                    st.write("Psychological Triggers:", ", ".join(content['emotional_profile']['triggers']))
+            
+            # Display content sections
             if content.get('title'):
                 st.markdown(f"### {content['title']}")
                 st.markdown("---")
             
-            # Content
             if content.get('content'):
                 st.markdown("### Content")
                 st.markdown(content['content'])
                 st.markdown("---")
             
-            # Keywords
             if content.get('keywords'):
                 st.markdown("### Keywords")
-                if isinstance(content['keywords'], list):
-                    st.markdown(", ".join(content['keywords']))
-                else:
-                    st.markdown(content['keywords'])
+                st.markdown(", ".join(content['keywords']))
                 st.markdown("---")
             
-            # Target Audience
             if content.get('target_audience'):
                 st.markdown("### Target Audience")
                 st.markdown(content['target_audience'])
@@ -283,10 +281,15 @@ def render_content_generator():
                 {content.get('content', '')}
                 
                 Keywords:
-                {', '.join(content.get('keywords', [])) if isinstance(content.get('keywords'), list) else content.get('keywords', '')}
+                {', '.join(content.get('keywords', []))}
                 
                 Target Audience:
                 {content.get('target_audience', '')}
+                
+                Emotional Analysis:
+                Primary Emotion: {content.get('emotional_profile', {}).get('primary_emotion', 'N/A')}
+                Emotional Intensity: {content.get('emotional_profile', {}).get('intensity', 'N/A')}
+                Psychological Triggers: {', '.join(content.get('emotional_profile', {}).get('triggers', []))}
                 """
                 
                 st.download_button(
@@ -295,11 +298,6 @@ def render_content_generator():
                     file_name=f"content_{content.get('title', 'generated').lower().replace(' ', '_')}.txt",
                     mime="text/plain"
                 )
-            
-            # Debug button
-            if st.button("Debug"):
-                st.write("Content in session state:", st.session_state.content_form_state.get('generated_content'))
-        
         else:
             st.markdown('<p class="generated-content-placeholder">Generated content will appear here...</p>', 
                        unsafe_allow_html=True)
