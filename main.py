@@ -15,7 +15,7 @@ def initialize_session_state():
             'mission': 'Example mission',
             'values': ['value1', 'value2'],
             'virtues': ['virtue1', 'virtue2'],
-            'is_completed': True  # Set to True to bypass welcome screen
+            'is_completed': True
         }
     if 'icp_data' not in st.session_state:
         st.session_state.icp_data = {
@@ -27,7 +27,7 @@ def initialize_session_state():
             'pain_points': [],
             'goals': [],
             'answers': {},
-            'is_completed': True  # Set to True to bypass ICP questionnaire
+            'is_completed': True
         }
     if 'webpage_analysis' not in st.session_state:
         st.session_state.webpage_analysis = {
@@ -36,7 +36,7 @@ def initialize_session_state():
             'is_completed': False
         }
     if 'selected_option' not in st.session_state:
-        st.session_state.selected_option = 'archetypes'  # Set default to archetypes view
+        st.session_state.selected_option = 'content'  # Set default to content generator
     if 'show_icp_questionnaire' not in st.session_state:
         st.session_state.show_icp_questionnaire = False
     if 'archetype_view' not in st.session_state:
@@ -83,71 +83,22 @@ def render_dashboard():
     # Handle navigation from sidebar
     if selected_option:
         st.session_state.selected_option = selected_option
-        if selected_option == "archetypes":
-            render_consumer_archetypes()
-            return
     
     # Main content area
-    main_container = st.container()
-    
-    with main_container:
-        # Handle other views
-        if st.session_state.selected_option == "icp_questionnaire":
-            render_icp_definition()
-            return
-        elif st.session_state.selected_option == "icp_summary":
-            render_icp_summary()
-            return
-        elif st.session_state.selected_option == "market_analysis":
-            if st.session_state.webpage_analysis.get('is_completed'):
-                from utils.webpage_analysis import display_webpage_analysis
-                display_webpage_analysis(st.session_state.webpage_analysis['analysis'])
-            else:
-                render_seo_analyzer()
-            return
-        elif st.session_state.selected_option == "archetypes":
-            render_consumer_archetypes()
-            return
-        
-        # Default dashboard content
-        st.title("AI Marketing Assistant")
-        
-        # Navigation buttons - Updated to use 3 columns
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if st.button("Generate Content Marketing", type="primary"):
-                st.session_state.selected_option = "content"
-        with col2:
-            if st.button("Create Social Media Campaign"):
-                st.session_state.selected_option = "social"
-        with col3:
-            if st.button("Generate SEO recommendations"):
-                st.session_state.selected_option = "seo"
-        
-        # Render selected component
-        if st.session_state.selected_option == "content":
-            render_content_generator()
-        elif st.session_state.selected_option == "social":
-            render_social_media_campaign()
-        elif st.session_state.selected_option == "seo":
-            render_seo_analyzer()
-        else:
-            # Default welcome view
-            st.markdown("""
-            ## 👋 Welcome to Clio AI Marketing Assistant!
-            
-            Get started by selecting one of the following options:
-            
-            1. **Generate Content Marketing** - Create engaging blog posts, social media content, and more
-            2. **Create Social Media Campaign** - Design comprehensive social media campaigns
-            3. **Generate SEO Recommendations** - Optimize your content for search engines
-            
-            Select an option above to begin!
-            """)
-        
-        # Render chat input at the bottom
-        render_chat_input()
+    if st.session_state.selected_option == "content":
+        render_content_generator()
+    elif st.session_state.selected_option == "social":
+        render_social_media_campaign()
+    elif st.session_state.selected_option == "market_analysis":
+        render_seo_analyzer()
+    elif st.session_state.selected_option == "archetypes":
+        render_consumer_archetypes()
+    elif st.session_state.selected_option == "icp_questionnaire":
+        render_icp_definition()
+    elif st.session_state.selected_option == "icp_summary":
+        render_icp_summary()
+    else:
+        render_content_generator()  # Default to content generator
 
 def main():
     st.set_page_config(
@@ -165,17 +116,14 @@ def main():
     
     # Main flow condition
     if not st.session_state.brand_values.get('is_completed', False):
-        # Add class to body for welcome screen styling
         st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
         render_brand_values()
         st.markdown('</div>', unsafe_allow_html=True)
     elif not st.session_state.icp_data.get('is_completed', False):
-        # Show ICP questionnaire after brand values are completed
         st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
         render_icp_definition()
         st.markdown('</div>', unsafe_allow_html=True)
     else:
-        # Show main dashboard after all steps are completed
         render_dashboard()
 
 if __name__ == "__main__":

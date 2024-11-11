@@ -4,30 +4,81 @@ import json
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+import html
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 def generate_marketing_content(business_info: str, content_type: str) -> dict:
-    prompt = f"""
-    Generate marketing content for the following business:
-    {business_info}
-    Content type: {content_type}
-    
-    Provide the response in JSON format with the following structure:
-    {{
-        "title": "Campaign title",
-        "content": "Main content",
-        "keywords": ["keyword1", "keyword2"],
-        "target_audience": "Description of target audience"
-    }}
-    """
-    
-    response = openai_client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return json.loads(response.choices[0].message.content)
+    """Generate marketing content with improved JSON handling"""
+    try:
+        # Escape special characters in the input
+        sanitized_info = html.escape(business_info)
+        
+        prompt = f"""
+        Generate marketing content for the following business:
+        {sanitized_info}
+        Content type: {content_type}
+        
+        Provide the response in JSON format with the following structure:
+        {{
+            "title": "Campaign title",
+            "content": "Main content",
+            "keywords": ["keyword1", "keyword2"],
+            "target_audience": "Description of target audience",
+            "tone": "Content tone",
+            "distribution_channels": ["channel1", "channel2"]
+        }}
+        
+        Ensure all text content is properly escaped and JSON-formatted.
+        """
+        
+        response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[{
+                "role": "user", 
+                "content": prompt
+            }],
+            response_format={ "type": "json_object" }
+        )
+        
+        try:
+            # Try to parse the JSON response
+            content = json.loads(response.choices[0].message.content.strip())
+            
+            # Ensure all required fields are present
+            required_fields = ['title', 'content', 'keywords', 'target_audience']
+            for field in required_fields:
+                if field not in content:
+                    content[field] = ""
+            
+            if not isinstance(content['keywords'], list):
+                content['keywords'] = []
+                
+            return content
+            
+        except json.JSONDecodeError as e:
+            # Fallback structure if JSON parsing fails
+            raw_content = response.choices[0].message.content.strip()
+            return {
+                "title": "Generated Content",
+                "content": raw_content,
+                "keywords": [],
+                "target_audience": "",
+                "tone": content_type,
+                "distribution_channels": []
+            }
+            
+    except Exception as e:
+        # Handle any other errors
+        return {
+            "title": "Error Generating Content",
+            "content": f"An error occurred: {str(e)}",
+            "keywords": [],
+            "target_audience": "",
+            "tone": content_type,
+            "distribution_channels": []
+        }
 
 def analyze_audience(data: dict) -> dict:
     prompt = f'''
