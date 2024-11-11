@@ -1,0 +1,81 @@
+import json
+from typing import Dict, Optional
+import openai
+
+def generate_marketing_content(prompt: str, content_type: str) -> Dict:
+    """
+    Generate marketing content using OpenAI's API with proper error handling
+    and response formatting.
+    
+    Args:
+        prompt (str): The input prompt containing story and other details
+        content_type (str): Type of content to generate
+    
+    Returns:
+        Dict: Formatted content with title, content, keywords, and target audience
+    """
+    try:
+        # System message to set the context and format
+        system_message = """You are an expert marketing content generator. 
+        Generate content that matches the provided type, tone, and platform. 
+        Include a compelling title, main content, relevant keywords, and target audience description."""
+        
+        # Make the API call
+        response = openai.chat.completions.create(
+            model="gpt-4-1106-preview",  # or your preferred model
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=2000
+        )
+        
+        # Extract the generated content
+        generated_text = response.choices[0].message.content
+        
+        # Parse the response into structured format
+        content_parts = generated_text.split('\n\n')
+        
+        # Initialize default structure
+        content_dict = {
+            "title": "",
+            "content": "",
+            "keywords": [],
+            "target_audience": ""
+        }
+        
+        # Parse the response sections
+        for part in content_parts:
+            if part.lower().startswith('title:'):
+                content_dict["title"] = part.replace('Title:', '').strip()
+            elif part.lower().startswith('content:'):
+                content_dict["content"] = part.replace('Content:', '').strip()
+            elif part.lower().startswith('keywords:'):
+                keywords = part.replace('Keywords:', '').strip()
+                content_dict["keywords"] = [k.strip() for k in keywords.split(',')]
+            elif part.lower().startswith('target audience:'):
+                content_dict["target_audience"] = part.replace('Target Audience:', '').strip()
+        
+        return content_dict
+    
+    except openai.APIError as e:
+        raise Exception(f"OpenAI API error: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Error generating content: {str(e)}")
+
+def validate_inputs(story: str, content_type: str) -> None:
+    """
+    Validate input parameters before making the API call.
+    
+    Args:
+        story (str): The input story
+        content_type (str): Type of content to generate
+        
+    Raises:
+        ValueError: If inputs are invalid
+    """
+    if not story or not story.strip():
+        raise ValueError("Story cannot be empty")
+    if not content_type or not content_type.strip():
+        raise ValueError("Content type must be specified")
