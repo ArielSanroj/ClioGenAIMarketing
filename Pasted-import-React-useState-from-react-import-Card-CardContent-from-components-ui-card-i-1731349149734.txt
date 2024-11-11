@@ -1,0 +1,227 @@
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select } from '@/components/ui/select';
+import { 
+  Loader2, 
+  TrendingUp, 
+  Target, 
+  MessageSquare, 
+  Activity,
+  Search,
+  RefreshCw
+} from 'lucide-react';
+
+const ContentMarketingGenerator = () => {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    story: '',
+    audience: '',
+    objective: '',
+    tone: '',
+    competitorInsights: ''
+  });
+  const [generatedContent, setGeneratedContent] = useState('');
+  const [trendingTopics, setTrendingTopics] = useState([]);
+
+  const emotionalTones = [
+    'Professional',
+    'Friendly',
+    'Inspiring',
+    'Humorous',
+    'Educational',
+    'Empathetic',
+    'Authoritative',
+    'Casual'
+  ];
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const analyzeContent = async () => {
+    setLoading(true);
+    // Simulate API call to analyze trends and generate content
+    setTimeout(() => {
+      const mockTrends = [
+        'Sustainable marketing practices',
+        'AI-driven personalization',
+        'Video-first content',
+        'Social commerce integration'
+      ];
+      setTrendingTopics(mockTrends);
+      
+      setGeneratedContent(`Strategic Content Recommendation:
+      
+Based on your input and current market trends, we recommend focusing on ${mockTrends[0]} while maintaining ${formData.tone} tone. 
+
+Target Audience Insights:
+${formData.audience} shows high engagement with video content and values authenticity.
+
+Campaign Strategy:
+1. Lead with user-generated content
+2. Implement cross-platform storytelling
+3. Leverage micro-influencer partnerships
+4. Focus on educational content with emotional appeal
+
+Content Distribution Plan:
+- Primary: Social media stories and reels
+- Secondary: Blog posts with embedded multimedia
+- Support: Email newsletter campaigns`);
+      
+      setLoading(false);
+    }, 2000);
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-6 p-6 max-w-7xl mx-auto">
+      {/* Input Section */}
+      <Card className="flex-1">
+        <CardContent className="pt-6">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold mb-6">Content Marketing Generator</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  What would you like to talk about?
+                </label>
+                <Textarea
+                  placeholder="What is the story you want to tell"
+                  value={formData.story}
+                  onChange={(e) => handleInputChange('story', e.target.value)}
+                  className="h-24"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Target Audience
+                </label>
+                <Textarea
+                  placeholder="Describe your target audience"
+                  value={formData.audience}
+                  onChange={(e) => handleInputChange('audience', e.target.value)}
+                  className="h-24"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Campaign Objective
+                </label>
+                <Input
+                  placeholder="What's your campaign objective?"
+                  value={formData.objective}
+                  onChange={(e) => handleInputChange('objective', e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Emotional Tone
+                </label>
+                <select
+                  value={formData.tone}
+                  onChange={(e) => handleInputChange('tone', e.target.value)}
+                  className="w-full p-2 border rounded-md"
+                >
+                  <option value="">Select Tone</option>
+                  {emotionalTones.map(tone => (
+                    <option key={tone} value={tone}>{tone}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Competitor Insights
+                </label>
+                <Textarea
+                  placeholder="Add any competitor insights or success strategies"
+                  value={formData.competitorInsights}
+                  onChange={(e) => handleInputChange('competitorInsights', e.target.value)}
+                  className="h-24"
+                />
+              </div>
+
+              <Button 
+                onClick={analyzeContent} 
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Analyzing Market Trends...
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Generate Content Strategy
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Output Section */}
+      <Card className="flex-1">
+        <CardContent className="pt-6">
+          <h2 className="text-2xl font-bold mb-6">Content Marketing Generator</h2>
+          
+          {/* Trending Topics Section */}
+          {trendingTopics.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold flex items-center mb-3">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Trending Topics
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {trendingTopics.map((trend, index) => (
+                  <span 
+                    key={index}
+                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                  >
+                    {trend}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Generated Content Section */}
+          <div className="mt-4">
+            <Textarea
+              value={generatedContent}
+              readOnly
+              className="h-[500px] font-mono text-sm"
+              placeholder="Generated content will appear here..."
+            />
+          </div>
+
+          {generatedContent && (
+            <div className="mt-4 flex gap-2">
+              <Button className="flex-1">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Regenerate
+              </Button>
+              <Button className="flex-1">
+                Export Strategy
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default ContentMarketingGenerator;
