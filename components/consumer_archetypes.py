@@ -4,24 +4,24 @@ import pandas as pd
 def render_archetype_card(name, data):
     """Render an archetype card with circle icon and profile information"""
     st.markdown(f"""
-        <div style="background: white; padding: 1.5rem; border-radius: 12px; margin: 1.5rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+        <div style="background: #FFFFFF; padding: 1.5rem; border-radius: 12px; margin: 1.25rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+            <div style="display: flex; align-items: flex-start; gap: 1.25rem;">
                 <div style="width: 4rem; height: 4rem; border-radius: 50%; background-color: {data['color']}; flex-shrink: 0;"></div>
                 <div style="flex-grow: 1;">
-                    <h3 style="margin: 0; color: #28264D; font-size: 1.25rem; font-weight: 600;">{name}</h3>
+                    <h3 style="margin: 0; color: #28264D; font-size: 1.25rem; font-weight: 500; line-height: 1.5;">{name}</h3>
                     
                     <div style="margin-top: 1rem; color: #4A4867;">
-                        <p style="margin-bottom: 0.75rem;">{data['description']}</p>
-                        <p style="margin-bottom: 0.75rem;">{data['client_type']}</p>
-                        <p style="margin-bottom: 0.75rem;">{data['campaign_strategy']}</p>
+                        <p style="margin: 0 0 1rem; line-height: 1.6;">{data['description']}</p>
+                        <p style="margin: 0 0 1rem; line-height: 1.6;">{data['client_type']}</p>
+                        <p style="margin: 0 0 1rem; line-height: 1.6;">{data['campaign_strategy']}</p>
                     </div>
 
-                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #E5E7EB;">
-                        <h4 style="font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem;">Profile Example:</h4>
-                        <p style="color: #4A4867; margin: 0;">
+                    <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #E5E7EB;">
+                        <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.75rem; line-height: 1.5;">Profile Example:</h4>
+                        <p style="color: #4A4867; margin: 0; line-height: 1.6;">
                             {data['profile']['name']}, {data['profile']['occupation']}, {data['profile']['age']} years old
                         </p>
-                        <p style="color: #4A4867; margin-top: 0.25rem;">
+                        <p style="color: #4A4867; margin: 0.5rem 0 0; line-height: 1.6;">
                             {data['profile']['needs']}
                         </p>
                     </div>
@@ -30,19 +30,19 @@ def render_archetype_card(name, data):
         </div>
     """, unsafe_allow_html=True)
 
-def render_subscale_card(title, interpretation, marketing_goal, consumer_type, color):
+def render_subscale_card(name, data):
     """Render a subscale card with matching styling"""
     st.markdown(f"""
-        <div style="background: white; padding: 1.5rem; border-radius: 12px; margin: 1.5rem 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="display: flex; align-items: flex-start; gap: 1rem;">
-                <div style="width: 4rem; height: 4rem; border-radius: 50%; background-color: {color}; flex-shrink: 0;"></div>
+        <div style="background: #FFFFFF; padding: 1.5rem; border-radius: 12px; margin: 1.25rem 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+            <div style="display: flex; align-items: start; gap: 1.25rem;">
+                <div style="width: 4rem; height: 4rem; border-radius: 50%; background-color: {data['color']}; flex-shrink: 0;"></div>
                 <div style="flex-grow: 1;">
-                    <h3 style="margin: 0; color: #28264D; font-size: 1.25rem; font-weight: 600;">{title}</h3>
+                    <h3 style="margin: 0; color: #28264D; font-size: 1.25rem; font-weight: 500; line-height: 1.5;">{name}</h3>
                     
                     <div style="margin-top: 1rem; color: #4A4867;">
-                        <p style="margin-bottom: 0.75rem;"><strong>Interpretation:</strong> {interpretation}</p>
-                        <p style="margin-bottom: 0.75rem;"><strong>Marketing goal:</strong> {marketing_goal}</p>
-                        <p style="margin-bottom: 0.75rem;"><strong>Consumer type:</strong> {consumer_type}</p>
+                        <p style="margin: 0 0 1rem; line-height: 1.6;"><span style="font-weight: 500;">Interpretation:</span> {data['interpretation']}</p>
+                        <p style="margin: 0 0 1rem; line-height: 1.6;"><span style="font-weight: 500;">Marketing goal:</span> {data['marketing_goal']}</p>
+                        <p style="margin: 0; line-height: 1.6;"><span style="font-weight: 500;">Consumer type:</span> {data['consumer_type']}</p>
                     </div>
                 </div>
             </div>
@@ -51,7 +51,35 @@ def render_subscale_card(title, interpretation, marketing_goal, consumer_type, c
 
 def render_consumer_archetypes():
     """Render the consumer archetypes display"""
-    st.markdown('<div style="padding: 1.5rem; max-width: 64rem; margin: 0 auto;">', unsafe_allow_html=True)
+    st.markdown("""
+        <style>
+        .stApp {
+            background-color: #FFFFFF;
+        }
+        .stButton>button[kind="primary"] {
+            padding: 0.875rem 1.5rem;
+            width: 100%;
+            height: auto;
+            background-color: #1E1B4B;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stButton>button[kind="secondary"] {
+            padding: 0.75rem 1.25rem;
+            background-color: transparent;
+            color: #1E1B4B;
+            border: 1px solid #1E1B4B;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div style="padding: 1.5rem 2rem; max-width: 64rem; margin: 0 auto;">', unsafe_allow_html=True)
     
     # Logo
     st.image("logoclio.png", width=100)
@@ -61,28 +89,26 @@ def render_consumer_archetypes():
         st.session_state.archetype_view = 'archetypes'
 
     # Navigation buttons with correct styling
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        if st.button("Go back", type="secondary", key="go_back"):
-            st.session_state.selected_option = None
-            st.rerun()
-    
-    with col2:
-        if st.session_state.archetype_view == 'archetypes':
-            if st.button("View subscales", type="primary", key="view_subscales"):
-                st.session_state.archetype_view = 'subscales'
+    if st.session_state.archetype_view == 'archetypes':
+        col1, col2 = st.columns([1, 11])
+        with col1:
+            if st.button("Go back", type="secondary"):
+                st.session_state.selected_option = None
                 st.rerun()
-        else:
-            if st.button("View archetypes", type="primary", key="view_archetypes"):
+        
+        st.markdown('<h2 style="font-size: 1.5rem; font-weight: 500; margin: 1.25rem 0; line-height: 1.5; color: #28264D;">Archetypes</h2>', unsafe_allow_html=True)
+        
+        if st.button("View subscales", type="primary"):
+            st.session_state.archetype_view = 'subscales'
+            st.rerun()
+    else:
+        col1, col2 = st.columns([1, 11])
+        with col1:
+            if st.button("Go back", type="secondary"):
                 st.session_state.archetype_view = 'archetypes'
                 st.rerun()
-
-    # Display title based on view
-    st.markdown(
-        f"<h2 style='color: #28264D; margin: 1.5rem 0; font-size: 2rem;'>{st.session_state.archetype_view.title()}</h2>",
-        unsafe_allow_html=True
-    )
+        
+        st.markdown('<h2 style="font-size: 1.5rem; font-weight: 500; margin: 1.25rem 0; line-height: 1.5; color: #28264D;">Subscales</h2>', unsafe_allow_html=True)
 
     # Display appropriate view
     if st.session_state.archetype_view == 'archetypes':
@@ -145,25 +171,41 @@ def render_consumer_archetypes():
             render_archetype_card(data['name'], data)
     else:
         subscale_data = {
-            'Focus on solving the problem - Autonomous': {
+            'autonomous': {
+                'id': 'focus-problem',
+                'name': 'Focus on solving the problem - Autonomous',
                 'interpretation': 'Consumers with high logical reasoning and organization skills. They seek practical and efficient solutions to their problems.',
                 'marketing_goal': 'Highlight product efficiency and functionality. - Provide detailed information and technical data. - Show how the product solves specific problems.',
                 'consumer_type': 'Goal-oriented professionals, leaders, entrepreneurs. - Value effectiveness and performance. - Want tools to optimize their productivity.',
                 'color': '#FFE4D6'
             },
-            'Tension reduction - Impulsive': {
+            'strive-succeed': {
+                'id': 'strive-succeed',
+                'name': 'Strive and succeed - Autonomous',
+                'interpretation': 'Highly motivated, perseverant, and ambitious consumers. They seek personal growth and success.',
+                'marketing_goal': 'Emphasize achievement and personal growth. - Use success stories and case studies. - Present the product as a tool to reach goals.',
+                'consumer_type': 'Entrepreneurs, developing professionals, outstanding students. - Seek opportunities to advance in their careers and skills.',
+                'color': '#FFE4D6'
+            },
+            'tension-reduction': {
+                'id': 'tension-reduction',
+                'name': 'Tension reduction - Impulsive',
                 'interpretation': 'Consumers with low frustration tolerance, seeking immediate gratification and quick solutions.',
                 'marketing_goal': 'Offer instant satisfaction and ease of use. - Promote limited-time offers and immediate rewards. - Highlight product speed and simplicity.',
                 'consumer_type': 'Impulsive buyers, tech enthusiasts, trend seekers. - Value immediacy and convenience in their purchases.',
                 'color': '#E7D6FF'
             },
-            'Keep it to oneself - Isolative': {
+            'keep-to-oneself': {
+                'id': 'keep-to-oneself',
+                'name': 'Keep it to oneself - Isolative',
                 'interpretation': 'Consumers who prefer to handle problems independently and may feel lonely.',
                 'marketing_goal': 'Offer autonomous and private solutions. - Promote products that can be used alone. - Ensure product privacy and discretion.',
                 'consumer_type': 'Introverts, independent individuals, privacy-concerned consumers. - Value control and autonomy in their experiences.',
                 'color': '#FFE4A0'
             },
-            'Indulge in illusions - Avoidant': {
+            'indulge-illusions': {
+                'id': 'indulge-illusions',
+                'name': 'Indulge in illusions - Avoidant',
                 'interpretation': 'Consumers who may detach from reality, avoiding difficult situations.',
                 'marketing_goal': 'Offer products that enable dreaming and escape. - Promote immersive or aspirational experiences. - Use storytelling that inspires and motivates.',
                 'consumer_type': 'Dreamers, fantasy fans, entertainment consumers. - Seek products that let them explore new realities.',
@@ -171,14 +213,8 @@ def render_consumer_archetypes():
             }
         }
         
-        for title, data in subscale_data.items():
-            render_subscale_card(
-                title=title,
-                interpretation=data['interpretation'],
-                marketing_goal=data['marketing_goal'],
-                consumer_type=data['consumer_type'],
-                color=data['color']
-            )
+        for id, data in subscale_data.items():
+            render_subscale_card(data['name'], data)
 
     st.markdown('</div>', unsafe_allow_html=True)
 

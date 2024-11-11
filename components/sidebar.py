@@ -2,6 +2,31 @@ import streamlit as st
 
 def render_sidebar():
     with st.sidebar:
+        st.markdown("""
+            <style>
+            .css-1d391kg {
+                background-color: #FFFFFF;
+            }
+            section[data-testid="stSidebar"] {
+                background-color: #FFFFFF;
+                border-right: 1px solid #E5E7EB;
+            }
+            .stButton>button {
+                width: 100%;
+                text-align: left;
+                padding: 0.75rem 1rem;
+                background: transparent;
+                color: #1E1B4B;
+                border: none;
+                font-size: 1rem;
+                font-weight: 500;
+            }
+            .stButton>button:hover {
+                background-color: #F3F4F6;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
         st.image("logoclio.png", width=100)
         
         st.markdown("### Navigation")
@@ -19,11 +44,9 @@ def render_sidebar():
         # Handle ICP view button specially
         if st.button("View my ICP", key=f"menu_icp"):
             if not st.session_state.icp_data.get('is_completed', False):
-                # If ICP not completed, set state to trigger questionnaire
                 st.session_state.show_icp_questionnaire = True
                 selected_option = "icp_questionnaire"
             else:
-                # If completed, show summary
                 selected_option = "icp_summary"
         
         # Handle other navigation buttons
