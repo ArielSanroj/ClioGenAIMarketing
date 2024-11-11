@@ -112,8 +112,8 @@ def render_dashboard():
         # Default dashboard content
         st.title("AI Marketing Assistant")
         
-        # Navigation buttons
-        col1, col2, col3, col4 = st.columns(4)
+        # Navigation buttons - Updated to use 3 columns
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             if st.button("Generate Content Marketing", type="primary"):
@@ -124,10 +124,6 @@ def render_dashboard():
         with col3:
             if st.button("Generate SEO recommendations"):
                 st.session_state.selected_option = "seo"
-        with col4:
-            if st.button("View Consumer Archetypes"):
-                st.session_state.selected_option = "archetypes"
-                st.rerun()
         
         # Render selected component
         if st.session_state.selected_option == "content":
@@ -146,7 +142,6 @@ def render_dashboard():
             1. **Generate Content Marketing** - Create engaging blog posts, social media content, and more
             2. **Create Social Media Campaign** - Design comprehensive social media campaigns
             3. **Generate SEO Recommendations** - Optimize your content for search engines
-            4. **View Consumer Archetypes** - Analyze consumer behavior patterns and marketing strategies
             
             Select an option above to begin!
             """)
