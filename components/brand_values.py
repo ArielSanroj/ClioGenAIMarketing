@@ -31,9 +31,10 @@ def render_brand_values():
     )
     
     with st.form(key='brand_values_form', clear_on_submit=False):
+        brand_values = get_user_state(user_id, "brand_values") or {}
         mission = st.text_area(
             "What is your company's mission?",
-            value=get_user_state(user_id, "brand_values", {}).get('mission', ''),
+            value=brand_values.get('mission', ''),
             height=100,
             help="Define your company's purpose and goals in a clear, concise statement."
         )
@@ -41,7 +42,7 @@ def render_brand_values():
         st.markdown("### What are the virtues and values of your brand?")
         
         # Convert list to string for text input
-        current_values = ', '.join(get_user_state(user_id, "brand_values", {}).get('values', []))
+        current_values = ', '.join((get_user_state(user_id, "brand_values") or {}).get('values', []))
         values = st.text_area(
             "Core Values",
             value=current_values,
@@ -49,7 +50,7 @@ def render_brand_values():
             height=100
         )
         
-        current_virtues = ', '.join(get_user_state(user_id, "brand_values", {}).get('virtues', []))
+        current_virtues = ', '.join((get_user_state(user_id, "brand_values") or {}).get('virtues', []))
         virtues = st.text_area(
             "Brand Virtues",
             value=current_virtues,

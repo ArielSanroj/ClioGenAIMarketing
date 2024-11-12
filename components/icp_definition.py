@@ -4,7 +4,7 @@ from utils.session_manager import get_user_state, set_user_state, get_current_us
 def initialize_icp_state():
     """Initialize ICP session state"""
     user_id = get_current_user_id()
-    if not get_user_state(user_id, "icp_data"):
+    if user_id and not get_user_state(user_id, "icp_data"):
         set_user_state(user_id, "icp_data", {
             'knowledge_level': '',
             'current_question': 1,
@@ -147,7 +147,8 @@ def render_icp_definition():
     # Show logo
     st.image("logoclio.png", width=100)
     
-    if not get_user_state(user_id, "icp_data").get('knowledge_level'):
+    icp_data = get_user_state(user_id, "icp_data") or {}
+    if not icp_data.get('knowledge_level'):
         st.markdown("## What is your current level of ICP knowledge?")
         
         knowledge_levels = [
@@ -158,11 +159,9 @@ def render_icp_definition():
         
         for level in knowledge_levels:
             if st.button(level):
-                set_user_state(user_id, "icp_data", {
-                    **get_user_state(user_id, "icp_data"),
-                    'knowledge_level': level,
-                    'current_question': 1
-                })
+                icp_data['knowledge_level'] = level
+                icp_data['current_question'] = 1
+                set_user_state(user_id, "icp_data", icp_data)
                 st.rerun()
         
         if st.button("Skip", type="secondary"):
@@ -178,7 +177,7 @@ def render_icp_definition():
     
     else:
         # Show progress
-        current_q = get_user_state(user_id, "icp_data").get('current_question', 1)
+        current_q = icp_data.get('current_question', 1)
         st.progress(current_q / 5)
         st.markdown(f"{current_q} / 5 questions")
         
@@ -191,7 +190,7 @@ def render_icp_definition():
         
         # Get current question
         question_data = get_question_by_knowledge_level(
-            get_user_state(user_id, "icp_data").get('knowledge_level'),
+            icp_data.get('knowledge_level'),
             current_q
         )
         
@@ -200,7 +199,7 @@ def render_icp_definition():
             
             # Render appropriate input based on question type
             answer_key = f"q{current_q}"
-            current_answer = get_user_state(user_id, "icp_data").get('answers', {}).get(answer_key, '')
+            current_answer = icp_data.get('answers', {}).get(answer_key, '')
             
             if question_data['type'] == 'text_area':
                 answer = st.text_area(
@@ -230,8 +229,8 @@ def render_icp_definition():
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("Previous", disabled=current_q == 1, key="back-btn"):
-                    icp_data = get_user_state(user_id, "icp_data")
-                    icp_data['answers'][answer_key] = answer
+                    if answer:
+                        icp_data['answers'][answer_key] = answer
                     if current_q > 1:
                         icp_data['current_question'] -= 1
                     else:
@@ -242,15 +241,15 @@ def render_icp_definition():
             with col2:
                 if current_q < 5:
                     if st.button("Next", type="primary"):
-                        icp_data = get_user_state(user_id, "icp_data")
-                        icp_data['answers'][answer_key] = answer
+                        if answer:
+                            icp_data['answers'][answer_key] = answer
                         icp_data['current_question'] += 1
                         set_user_state(user_id, "icp_data", icp_data)
                         st.rerun()
                 else:
                     if st.button("Complete", type="primary"):
-                        icp_data = get_user_state(user_id, "icp_data")
-                        icp_data['answers'][answer_key] = answer
+                        if answer:
+                            icp_data['answers'][answer_key] = answer
                         icp_data['is_completed'] = True
                         set_user_state(user_id, "icp_data", icp_data)
                         st.rerun()
