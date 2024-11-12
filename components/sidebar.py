@@ -1,6 +1,24 @@
 import streamlit as st
+from utils.session_manager import get_user_state, get_current_user_id, set_user_state
 
 def render_sidebar():
+    """Render the sidebar navigation"""
+    user_id = get_current_user_id()
+    
+    # Initialize ICP state if not exists
+    if not get_user_state(user_id, "icp_data"):
+        set_user_state(user_id, "icp_data", {
+            'knowledge_level': '',
+            'current_question': 1,
+            'demographics': {},
+            'psychographics': {},
+            'archetype': '',
+            'pain_points': [],
+            'goals': [],
+            'answers': {},
+            'is_completed': False
+        })
+    
     with st.sidebar:
         st.markdown("""
             <style>
@@ -46,35 +64,38 @@ def render_sidebar():
         
         # Handle ICP view button specially
         if st.button("View my ICP", key=f"menu_icp"):
-            if not st.session_state.icp_data.get('is_completed', False):
-                st.session_state.show_icp_questionnaire = True
+            icp_data = get_user_state(user_id, "icp_data") or {}
+            if not icp_data.get('is_completed', False):
+                set_user_state(user_id, "selected_option", "icp_questionnaire")
                 selected_option = "icp_questionnaire"
             else:
+                set_user_state(user_id, "selected_option", "icp_summary")
                 selected_option = "icp_summary"
         
         # Handle other navigation buttons
         for label, value in menu_options.items():
             if label not in ["View my ICP"]:
                 if st.button(label, key=f"menu_{value}"):
-                    selected_option = value
-                    st.session_state.selected_option = value
-                    # Reset chat state when clicking "New Chat"
                     if value == "new_chat":
-                        st.session_state.chat_history = []
-                        st.session_state.current_chat_id = None
-                        st.session_state.selected_option = "home"  # Changed to "home"
-                        st.session_state.content_form_state = {  # Reset content form state
+                        # Reset chat state when clicking "New Chat"
+                        set_user_state(user_id, "chat_history", [])
+                        set_user_state(user_id, "current_chat_id", None)
+                        set_user_state(user_id, "selected_option", "home")
+                        set_user_state(user_id, "content_form_state", {
                             'story': '',
                             'content_type': '',
                             'platform': '',
                             'tone': '',
                             'competitor_insights': '',
                             'generated_content': None
-                        }
+                        })
                     elif value == "archetypes":
-                        st.session_state.archetype_view = 'archetypes'
+                        set_user_state(user_id, "archetype_view", 'archetypes')
+                    
+                    set_user_state(user_id, "selected_option", value)
+                    selected_option = value
                     st.rerun()
-
+        
         # Add spacer to push logout button to bottom
         st.markdown("<div style='flex-grow: 1;'></div>", unsafe_allow_html=True)
         
