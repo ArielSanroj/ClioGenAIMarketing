@@ -301,7 +301,7 @@ def render_content_generator():
                 st.error("Please enter a story to generate content.")
                 return
                 
-            with st.spinner("Generating content for all archetypes..."):
+            with st.spinner("Generating content..."):
                 try:
                     # Generate content for all archetypes
                     all_content = generate_content_for_all_archetypes(
