@@ -51,11 +51,26 @@ def render_sidebar():
         
         # Handle other navigation buttons
         for label, value in menu_options.items():
-            if label not in ["View my ICP"] and st.button(label, key=f"menu_{value}"):
-                selected_option = value
-                st.session_state.selected_option = value
-                if value == "archetypes":
-                    st.session_state.archetype_view = 'archetypes'
-                st.rerun()
+            if label not in ["View my ICP"]:
+                if st.button(label, key=f"menu_{value}"):
+                    if label == "New Chat":
+                        # Reset to default view for New Chat
+                        st.session_state.selected_option = None
+                        # Reset any active AI system states
+                        if 'content_form_state' in st.session_state:
+                            st.session_state.content_form_state = {
+                                'story': '',
+                                'content_type': '',
+                                'platform': '',
+                                'tone': '',
+                                'competitor_insights': '',
+                                'generated_content': None
+                            }
+                    else:
+                        selected_option = value
+                        st.session_state.selected_option = value
+                        if value == "archetypes":
+                            st.session_state.archetype_view = 'archetypes'
+                    st.rerun()
         
         return selected_option

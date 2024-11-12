@@ -125,10 +125,6 @@ def render_content_generator():
             width: 60px;
             height: auto;
         }
-        .button-container {
-            display: flex;
-            gap: 1rem;
-        }
         .nav-btn {
             background-color: #1E1B4B;
             color: white;
@@ -205,27 +201,18 @@ def render_content_generator():
     # Initialize session state
     initialize_session_state()
 
-    # Header with logo and navigation buttons
+    # Header with logo and go back button
     st.markdown('''
         <div class="header-container">
             <img src="logoclio.png" alt="Logo" class="logo">
-            <div class="button-container">
-                <button class="nav-btn" onclick="window.location.href='#'" id="new-chat-btn">New Chat</button>
-                <button class="nav-btn" onclick="window.location.href='#'" id="go-back-btn">Go back</button>
-            </div>
+            <button class="nav-btn" onclick="window.location.href='#'" id="go-back-btn">Go back</button>
         </div>
     ''', unsafe_allow_html=True)
 
-    # Add button click handlers
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        if st.button("New Chat", key="new_chat"):
-            st.session_state.selected_option = "content"
-            st.rerun()
-    with col2:
-        if st.button("Go back", key="go_back"):
-            st.session_state.selected_option = "content"
-            st.rerun()
+    # Add button click handler for go back
+    if st.button("Go back", key="go_back"):
+        st.session_state.selected_option = "content"
+        st.rerun()
 
     # Main content area with two columns
     col1, col2 = st.columns(2, gap="large")
