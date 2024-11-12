@@ -125,16 +125,21 @@ def render_content_generator():
             width: 60px;
             height: auto;
         }
-        .go-back-btn {
+        .button-container {
+            display: flex;
+            gap: 1rem;
+        }
+        .nav-btn {
             background-color: #1E1B4B;
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 12px;
             font-weight: 500;
-            text-decoration: none;
+            border: none;
+            cursor: pointer;
             transition: all 0.2s ease-in-out;
         }
-        .go-back-btn:hover {
+        .nav-btn:hover {
             background-color: #2D2A5C;
             transform: translateY(-1px);
         }
@@ -182,58 +187,17 @@ def render_content_generator():
         .stSelectbox>div>div>div:hover {
             border-color: #1E1B4B !important;
         }
-        .stSelectbox [data-baseweb="select"] {
-            height: 56px !important;
-            background-color: white !important;
-        }
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 8px;
-            margin-bottom: 1.5rem;
-            background-color: transparent;
-        }
-        .stTabs [data-baseweb="tab"] {
-            padding: 0.75rem 1.25rem;
-            border-radius: 8px;
-            background-color: #F3F4F6;
-            color: #4B5563;
-            font-weight: 500;
-            border: none;
-            transition: all 0.2s ease-in-out;
-        }
-        .stTabs [aria-selected="true"] {
-            background-color: #1E1B4B !important;
-            color: white !important;
-        }
         .stButton>button {
             background-color: #1E1B4B !important;
             color: white !important;
             padding: 0.75rem 1.5rem !important;
             border-radius: 12px !important;
             font-weight: 500 !important;
-            width: 100% !important;
-            height: 56px !important;
-            margin-top: 1rem !important;
             transition: all 0.2s ease-in-out !important;
         }
         .stButton>button:hover {
             background-color: #2D2A5C !important;
             transform: translateY(-1px) !important;
-        }
-        .generated-content-placeholder {
-            color: #6B7280 !important;
-            font-style: italic !important;
-            text-align: center !important;
-            margin-top: 2rem !important;
-        }
-        h2 {
-            color: #1E1B4B !important;
-            font-size: 24px !important;
-            font-weight: 600 !important;
-            margin-bottom: 1.5rem !important;
-        }
-        ::placeholder {
-            color: #6B7280 !important;
-            opacity: 1 !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -241,14 +205,28 @@ def render_content_generator():
     # Initialize session state
     initialize_session_state()
 
-    # Header with logo and go back button
-    st.markdown("""
+    # Header with logo and navigation buttons
+    st.markdown('''
         <div class="header-container">
             <img src="logoclio.png" alt="Logo" class="logo">
-            <a href="#" class="go-back-btn">Go back</a>
+            <div class="button-container">
+                <button class="nav-btn" onclick="window.location.href='#'" id="new-chat-btn">New Chat</button>
+                <button class="nav-btn" onclick="window.location.href='#'" id="go-back-btn">Go back</button>
+            </div>
         </div>
-    """, unsafe_allow_html=True)
-    
+    ''', unsafe_allow_html=True)
+
+    # Add button click handlers
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if st.button("New Chat", key="new_chat"):
+            st.session_state.selected_option = "content"
+            st.rerun()
+    with col2:
+        if st.button("Go back", key="go_back"):
+            st.session_state.selected_option = "content"
+            st.rerun()
+
     # Main content area with two columns
     col1, col2 = st.columns(2, gap="large")
 
