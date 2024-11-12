@@ -7,6 +7,7 @@ from jose import JWTError, jwt
 import secrets
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from utils.session_manager import clear_user_session, initialize_user_session
 
 # Password hashing configuration
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -72,6 +73,9 @@ def register_user(email: str, password: str, name: str, surname: str,
                     data={"sub": user["email"]},
                     expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
                 )
+
+                # Initialize user session state
+                initialize_user_session(str(user["id"]))
                 
                 return {
                     "message": "Registration successful",
@@ -114,6 +118,9 @@ def authenticate_user(email: str, password: str) -> Dict:
                     WHERE id = %s
                 """, (user["id"],))
                 conn.commit()
+
+                # Initialize user session state
+                initialize_user_session(str(user["id"]))
                 
                 return {
                     "access_token": access_token,
@@ -124,6 +131,16 @@ def authenticate_user(email: str, password: str) -> Dict:
                 
     except Exception as e:
         return {"error": str(e)}
+
+def logout_user():
+    """Logout current user and clear their session state"""
+    if "user_id" in st.session_state:
+        user_id = st.session_state.user_id
+        clear_user_session(str(user_id))
+        del st.session_state.user_id
+        del st.session_state.user_email
+        if "access_token" in st.session_state:
+            del st.session_state.access_token
 
 def is_authenticated() -> bool:
     """Check if user is authenticated in current session"""
