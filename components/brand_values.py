@@ -70,14 +70,14 @@ def render_brand_values():
                     'is_completed': True
                 }
                 set_user_state(user_id, "brand_values", brand_values)
-                # Initialize ICP state to ensure proper flow
-                if not get_user_state(user_id, "icp_data"):
-                    set_user_state(user_id, "icp_data", {
-                        'knowledge_level': '',
-                        'current_question': 1,
-                        'answers': {},
-                        'is_completed': False
-                    })
+                # Initialize ICP state and set selected_option to icp_questionnaire
+                set_user_state(user_id, "icp_data", {
+                    'knowledge_level': '',
+                    'current_question': 1,
+                    'answers': {},
+                    'is_completed': False
+                })
+                set_user_state(user_id, "selected_option", "icp_questionnaire")
                 st.success("Brand values saved successfully!")
                 st.rerun()
             else:
@@ -118,14 +118,14 @@ def render_brand_values():
             'is_completed': True  # Mark as completed even though skipped
         }
         set_user_state(user_id, "brand_values", brand_values)
-        # Initialize ICP state to ensure proper flow
-        if not get_user_state(user_id, "icp_data"):
-            set_user_state(user_id, "icp_data", {
-                'knowledge_level': '',
-                'current_question': 1,
-                'answers': {},
-                'is_completed': False
-            })
+        # Initialize ICP state and set selected_option to icp_questionnaire
+        set_user_state(user_id, "icp_data", {
+            'knowledge_level': '',
+            'current_question': 1,
+            'answers': {},
+            'is_completed': False
+        })
+        set_user_state(user_id, "selected_option", "icp_questionnaire")
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     
