@@ -1,10 +1,11 @@
 import streamlit as st
-import pandas as pd
+from utils.session_manager import get_user_state, set_user_state, get_current_user_id
 
 def initialize_icp_state():
     """Initialize ICP session state"""
-    if 'icp_data' not in st.session_state:
-        st.session_state.icp_data = {
+    user_id = get_current_user_id()
+    if not get_user_state(user_id, "icp_data"):
+        set_user_state(user_id, "icp_data", {
             'knowledge_level': '',
             'current_question': 1,
             'demographics': {},
@@ -14,7 +15,7 @@ def initialize_icp_state():
             'goals': [],
             'answers': {},
             'is_completed': False
-        }
+        })
 
 def get_question_by_knowledge_level(knowledge_level: str, question_number: int) -> dict:
     """Get questions based on knowledge level and question number"""
@@ -117,6 +118,28 @@ def get_question_by_knowledge_level(knowledge_level: str, question_number: int) 
 def render_icp_definition():
     """Render the ICP definition form"""
     initialize_icp_state()
+    user_id = get_current_user_id()
+    
+    # Add custom styles for back button
+    st.markdown("""
+        <style>
+        .back-button {
+            background-color: transparent;
+            color: #1E1B4B;
+            border: 1px solid #1E1B4B;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+        .back-button:hover {
+            background-color: #F3F4F6;
+            transform: translateY(-1px);
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
     # Center align the content
     st.markdown('<div class="centered-container">', unsafe_allow_html=True)
@@ -124,7 +147,7 @@ def render_icp_definition():
     # Show logo
     st.image("logoclio.png", width=100)
     
-    if not st.session_state.icp_data.get('knowledge_level'):
+    if not get_user_state(user_id, "icp_data").get('knowledge_level'):
         st.markdown("## What is your current level of ICP knowledge?")
         
         knowledge_levels = [
@@ -135,33 +158,40 @@ def render_icp_definition():
         
         for level in knowledge_levels:
             if st.button(level):
-                st.session_state.icp_data['knowledge_level'] = level
-                st.session_state.icp_data['current_question'] = 1
+                set_user_state(user_id, "icp_data", {
+                    **get_user_state(user_id, "icp_data"),
+                    'knowledge_level': level,
+                    'current_question': 1
+                })
                 st.rerun()
         
         if st.button("Skip", type="secondary"):
-            st.session_state.icp_data['is_completed'] = True
+            # Update session state to skip ICP and navigate to market analysis
+            set_user_state(user_id, "icp_data", {
+                'knowledge_level': '',
+                'current_question': 1,
+                'answers': {},
+                'is_completed': True
+            })
+            set_user_state(user_id, "selected_option", "market_analysis")
             st.rerun()
     
     else:
         # Show progress
-        current_q = st.session_state.icp_data['current_question']
+        current_q = get_user_state(user_id, "icp_data").get('current_question', 1)
         st.progress(current_q / 5)
         st.markdown(f"{current_q} / 5 questions")
         
-        # Show back button
-        col1, col2 = st.columns([1, 11])
-        with col1:
-            if st.button("Go back"):
-                if current_q > 1:
-                    st.session_state.icp_data['current_question'] -= 1
-                else:
-                    st.session_state.icp_data['knowledge_level'] = ''
-                st.rerun()
+        # Show back button at the top
+        st.markdown("""
+            <button class="back-button" onclick="javascript:document.querySelector('[data-testid="stForm"] button.back-btn').click();">
+                ← Go Back
+            </button>
+        """, unsafe_allow_html=True)
         
         # Get current question
         question_data = get_question_by_knowledge_level(
-            st.session_state.icp_data['knowledge_level'],
+            get_user_state(user_id, "icp_data").get('knowledge_level'),
             current_q
         )
         
@@ -170,7 +200,7 @@ def render_icp_definition():
             
             # Render appropriate input based on question type
             answer_key = f"q{current_q}"
-            current_answer = st.session_state.icp_data['answers'].get(answer_key, '')
+            current_answer = get_user_state(user_id, "icp_data").get('answers', {}).get(answer_key, '')
             
             if question_data['type'] == 'text_area':
                 answer = st.text_area(
@@ -199,41 +229,30 @@ def render_icp_definition():
             # Navigation buttons
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("Previous", disabled=current_q == 1):
-                    st.session_state.icp_data['answers'][answer_key] = answer
-                    st.session_state.icp_data['current_question'] -= 1
+                if st.button("Previous", disabled=current_q == 1, key="back-btn"):
+                    icp_data = get_user_state(user_id, "icp_data")
+                    icp_data['answers'][answer_key] = answer
+                    if current_q > 1:
+                        icp_data['current_question'] -= 1
+                    else:
+                        icp_data['knowledge_level'] = ''
+                    set_user_state(user_id, "icp_data", icp_data)
                     st.rerun()
             
             with col2:
                 if current_q < 5:
                     if st.button("Next", type="primary"):
-                        st.session_state.icp_data['answers'][answer_key] = answer
-                        st.session_state.icp_data['current_question'] += 1
+                        icp_data = get_user_state(user_id, "icp_data")
+                        icp_data['answers'][answer_key] = answer
+                        icp_data['current_question'] += 1
+                        set_user_state(user_id, "icp_data", icp_data)
                         st.rerun()
                 else:
                     if st.button("Complete", type="primary"):
-                        st.session_state.icp_data['answers'][answer_key] = answer
-                        st.session_state.icp_data['is_completed'] = True
+                        icp_data = get_user_state(user_id, "icp_data")
+                        icp_data['answers'][answer_key] = answer
+                        icp_data['is_completed'] = True
+                        set_user_state(user_id, "icp_data", icp_data)
                         st.rerun()
-        
+    
     st.markdown('</div>', unsafe_allow_html=True)
-
-    # Display summary if completed
-    if st.session_state.icp_data.get('is_completed') and st.session_state.icp_data.get('answers'):
-        st.markdown("### Your ICP Profile")
-        st.markdown(f"**Knowledge Level:** {st.session_state.icp_data['knowledge_level']}")
-        
-        st.markdown("**Your Answers:**")
-        for q_num in range(1, 6):
-            question = get_question_by_knowledge_level(
-                st.session_state.icp_data['knowledge_level'],
-                q_num
-            )
-            if question:
-                answer = st.session_state.icp_data['answers'].get(f"q{q_num}", "Not answered")
-                st.markdown(f"**{question['question']}**")
-                if isinstance(answer, list):
-                    for item in answer:
-                        st.markdown(f"- {item}")
-                else:
-                    st.markdown(f"{answer}")
