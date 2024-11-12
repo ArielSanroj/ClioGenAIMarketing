@@ -4,7 +4,7 @@ from utils.session_manager import get_user_state, set_user_state, get_current_us
 def initialize_brand_values_state():
     """Initialize brand values session state"""
     user_id = get_current_user_id()
-    if not get_user_state(user_id, "brand_values"):
+    if user_id and not get_user_state(user_id, "brand_values"):
         set_user_state(user_id, "brand_values", {
             'mission': '',
             'values': [],
@@ -33,7 +33,7 @@ def render_brand_values():
     with st.form(key='brand_values_form', clear_on_submit=False):
         mission = st.text_area(
             "What is your company's mission?",
-            value=get_user_state(user_id, "brand_values").get('mission', ''),
+            value=get_user_state(user_id, "brand_values", {}).get('mission', ''),
             height=100,
             help="Define your company's purpose and goals in a clear, concise statement."
         )
@@ -41,7 +41,7 @@ def render_brand_values():
         st.markdown("### What are the virtues and values of your brand?")
         
         # Convert list to string for text input
-        current_values = ', '.join(get_user_state(user_id, "brand_values").get('values', []))
+        current_values = ', '.join(get_user_state(user_id, "brand_values", {}).get('values', []))
         values = st.text_area(
             "Core Values",
             value=current_values,
@@ -49,7 +49,7 @@ def render_brand_values():
             height=100
         )
         
-        current_virtues = ', '.join(get_user_state(user_id, "brand_values").get('virtues', []))
+        current_virtues = ', '.join(get_user_state(user_id, "brand_values", {}).get('virtues', []))
         virtues = st.text_area(
             "Brand Virtues",
             value=current_virtues,
@@ -74,36 +74,42 @@ def render_brand_values():
             else:
                 st.error("Please fill in all fields before proceeding.")
     
-    # Add skip button after the form
-    col1, col2 = st.columns([5, 1])
-    with col2:
-        if st.button("Skip", type="secondary"):
-            # Update session state to skip brand values
-            brand_values = {
-                'mission': '',
-                'values': [],
-                'virtues': [],
-                'is_completed': True  # Mark as completed even though skipped
-            }
-            set_user_state(user_id, "brand_values", brand_values)
-            st.rerun()
+    # Add skip button after the form with consistent styling
+    st.markdown("""
+        <style>
+        .skip-button-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+        .skip-button {
+            background-color: transparent;
+            color: #1E1B4B;
+            border: 1px solid #1E1B4B;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .skip-button:hover {
+            background-color: #F3F4F6;
+            transform: translateY(-1px);
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="skip-button-container">', unsafe_allow_html=True)
+    if st.button("Skip", type="secondary", key="skip_button"):
+        # Update session state to skip brand values and move to ICP
+        brand_values = {
+            'mission': '',
+            'values': [],
+            'virtues': [],
+            'is_completed': True  # Mark as completed even though skipped
+        }
+        set_user_state(user_id, "brand_values", brand_values)
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
-
-    # Footer
-    st.markdown("""
-        <div class="footer">
-            <div>
-                <a href="#">Contact Us</a>
-                <a href="#">Privacy Policy</a>
-            </div>
-            <div>
-                <a href="#"><i class="fab fa-facebook"></i></a>
-                <a href="#"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-youtube"></i></a>
-                <a href="#"><i class="fab fa-twitter"></i></a>
-                <a href="#"><i class="fab fa-whatsapp"></i></a>
-                <a href="#"><i class="fab fa-linkedin"></i></a>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
