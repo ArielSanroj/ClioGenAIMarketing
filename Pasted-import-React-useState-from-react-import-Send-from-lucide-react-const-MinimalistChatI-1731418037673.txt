@@ -1,0 +1,94 @@
+import React, { useState } from 'react';
+import { Send } from 'lucide-react';
+
+const MinimalistChatInterface = () => {
+  const [input, setInput] = useState('');
+  const [selectedAction, setSelectedAction] = useState(null);
+
+  const actions = [
+    {
+      id: 'content',
+      label: 'Generate Content Marketing',
+      bgColor: 'bg-amber-50',
+      borderColor: 'border-amber-200'
+    },
+    {
+      id: 'social',
+      label: 'Create Social Media Campaign',
+      bgColor: 'bg-white',
+      borderColor: 'border-gray-200'
+    },
+    {
+      id: 'seo',
+      label: 'Generate SEO recommendations',
+      bgColor: 'bg-white',
+      borderColor: 'border-gray-200'
+    }
+  ];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    setInput('');
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-slate-50">
+      {/* Header with Save Button */}
+      <div className="flex justify-end p-4">
+        <button className="bg-slate-900 text-white px-6 py-2 rounded-lg">
+          Save and Exit
+        </button>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-4 px-4 mt-32">
+        {actions.map((action) => (
+          <button
+            key={action.id}
+            onClick={() => setSelectedAction(action.id)}
+            className={`
+              ${action.bgColor}
+              ${action.borderColor}
+              border
+              rounded-lg
+              px-6
+              py-4
+              text-sm
+              text-center
+              min-w-[200px]
+              hover:border-slate-300
+              transition-colors
+            `}
+          >
+            {action.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Spacer */}
+      <div className="flex-grow" />
+
+      {/* Chat Input */}
+      <div className="p-4 bg-white rounded-t-2xl shadow-lg">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Message Clio AI"
+            className="flex-1 p-4 bg-transparent outline-none text-slate-800 placeholder-slate-500"
+          />
+          <button
+            type="submit"
+            className="p-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+          >
+            <Send className="w-5 h-5" />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default MinimalistChatInterface;

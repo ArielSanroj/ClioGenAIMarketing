@@ -21,8 +21,10 @@ def apply_custom_styles():
             cursor: pointer;
             transition: all 0.2s;
             width: 100%;
-            display: block;
-            margin-bottom: 1rem;
+            max-width: 600px;
+            margin: 0 auto 1rem;
+            position: relative;
+            overflow: hidden;
         }
         
         .nav-option:hover {
@@ -78,6 +80,31 @@ def apply_custom_styles():
         
         .send-button:hover {
             color: #2D2A5C;
+        }
+        
+        /* Chat messages */
+        .chat-message {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .chat-message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .message-content {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            max-width: 70%;
+        }
+        
+        .chat-message.user .message-content {
+            background-color: #1E1B4B;
+            color: white;
         }
         
         /* Rest of the existing styles */
