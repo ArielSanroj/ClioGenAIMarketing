@@ -6,6 +6,39 @@ import numpy as np
 from emotion_engine import EmotionEngine, EmotionalProfile, BehavioralPattern
 
 @dataclass
+class MarketingGoal:
+    """Marketing campaign goal definition"""
+    goal_type: str
+    target_metrics: Dict[str, float]
+    timeline: Dict[str, datetime]
+    success_criteria: Dict[str, Any]
+    priority: int
+
+@dataclass
+class BuyerPersona:
+    """Buyer persona definition with emotional profiling"""
+    name: str
+    archetype: str
+    demographics: Dict[str, Any]
+    psychographics: Dict[str, Any]
+    pain_points: List[str]
+    goals: List[str]
+    emotional_profile: Optional[EmotionalProfile] = None
+
+@dataclass
+class ContentPiece:
+    """Content piece with emotional intelligence metadata"""
+    title: str
+    content_type: str
+    target_persona: str
+    emotional_tone: str
+    keywords: List[str]
+    content_body: str
+    created_at: datetime
+    emotional_profile: Dict[str, Any]
+    performance_metrics: Optional[Dict[str, float]] = None
+
+@dataclass
 class MarketingMetrics:
     engagement_rate: float
     conversion_rate: float
@@ -137,10 +170,10 @@ class MarketingCampaignSystem:
         self.feedback_loop = FeedbackLoop()
 
     async def create_campaign(self, 
-                            name: str,
-                            goals: List[MarketingGoal],
-                            personas: List[BuyerPersona],
-                            brand_values: Dict) -> Dict:
+                          name: str,
+                          goals: List[MarketingGoal],
+                          personas: List[BuyerPersona],
+                          brand_values: Dict) -> Dict:
         """Create a new marketing campaign with emotional intelligence"""
         try:
             campaign_data = {
@@ -177,8 +210,8 @@ class MarketingCampaignSystem:
             return {'error': str(e)}
 
     async def generate_campaign_content(self, 
-                                     campaign_data: Dict,
-                                     content_types: List[str]) -> List[ContentPiece]:
+                                   campaign_data: Dict,
+                                   content_types: List[str]) -> List[ContentPiece]:
         """Generate content for campaign asynchronously"""
         try:
             content_pieces = []
@@ -205,24 +238,22 @@ class MarketingCampaignSystem:
             return []
 
     async def _generate_content_piece(self,
-                                    persona: BuyerPersona,
-                                    content_type: str,
-                                    campaign_data: Dict) -> Optional[ContentPiece]:
+                                  persona: BuyerPersona,
+                                  content_type: str,
+                                  campaign_data: Dict) -> Optional[ContentPiece]:
         """Generate a single content piece with emotional optimization"""
         try:
-            # Generate content using emotion engine
             emotional_profile = persona.emotional_profile
             if not emotional_profile:
                 return None
 
-            # Create content piece
             content_piece = ContentPiece(
                 title=f"{content_type} for {persona.name}",
                 content_type=content_type,
                 target_persona=persona.name,
                 emotional_tone=list(emotional_profile.content_tone.keys())[0],
-                keywords=[],  # To be filled by content generation
-                content_body="",  # To be filled by content generation
+                keywords=[],
+                content_body="",
                 created_at=datetime.utcnow(),
                 emotional_profile={
                     'primary_emotion': emotional_profile.primary_emotion,
@@ -236,91 +267,6 @@ class MarketingCampaignSystem:
         except Exception as e:
             print(f"Error generating content piece: {str(e)}")
             return None
-
-    async def track_campaign_performance(self, campaign_id: str) -> Dict:
-        """Track campaign performance metrics"""
-        try:
-            performance_metrics = {
-                'engagement_rate': self._calculate_engagement_rate(),
-                'conversion_rate': self._calculate_conversion_rate(),
-                'emotional_resonance': self._calculate_emotional_resonance(),
-                'content_performance': self._analyze_content_performance()
-            }
-
-            self.performance_history.append({
-                'timestamp': datetime.utcnow(),
-                'metrics': performance_metrics
-            })
-
-            return performance_metrics
-
-        except Exception as e:
-            print(f"Error tracking campaign performance: {str(e)}")
-            return {}
-
-    def _calculate_engagement_rate(self) -> float:
-        """Calculate overall engagement rate"""
-        if not self.content_pieces:
-            return 0.0
-        
-        total_engagement = sum(
-            piece.performance_metrics.get('engagement_rate', 0)
-            for piece in self.content_pieces
-            if piece.performance_metrics
-        )
-        return total_engagement / len(self.content_pieces)
-
-    def _calculate_conversion_rate(self) -> float:
-        """Calculate overall conversion rate"""
-        if not self.content_pieces:
-            return 0.0
-        
-        total_conversion = sum(
-            piece.performance_metrics.get('conversion_rate', 0)
-            for piece in self.content_pieces
-            if piece.performance_metrics
-        )
-        return total_conversion / len(self.content_pieces)
-
-    def _calculate_emotional_resonance(self) -> Dict:
-        """Calculate emotional resonance scores"""
-        resonance_scores = {}
-        for piece in self.content_pieces:
-            if piece.emotional_profile and piece.performance_metrics:
-                emotion = piece.emotional_profile['primary_emotion']
-                score = piece.performance_metrics.get('engagement_rate', 0) * \
-                       piece.emotional_profile.get('intensity', 1.0)
-                resonance_scores[emotion] = resonance_scores.get(emotion, 0) + score
-        return resonance_scores
-
-    def _analyze_content_performance(self) -> Dict:
-        """Analyze performance of different content types"""
-        performance_by_type = {}
-        for piece in self.content_pieces:
-            if piece.performance_metrics:
-                content_type = piece.content_type
-                if content_type not in performance_by_type:
-                    performance_by_type[content_type] = {
-                        'count': 0,
-                        'total_engagement': 0,
-                        'total_conversion': 0
-                    }
-                
-                metrics = piece.performance_metrics
-                performance_by_type[content_type]['count'] += 1
-                performance_by_type[content_type]['total_engagement'] += \
-                    metrics.get('engagement_rate', 0)
-                performance_by_type[content_type]['total_conversion'] += \
-                    metrics.get('conversion_rate', 0)
-        
-        # Calculate averages
-        for content_type, data in performance_by_type.items():
-            count = data['count']
-            if count > 0:
-                data['avg_engagement'] = data['total_engagement'] / count
-                data['avg_conversion'] = data['total_conversion'] / count
-                
-        return performance_by_type
 
     async def process_interaction(self, interaction_data: Dict[str, Any]) -> None:
         """Process new interaction data and update models"""

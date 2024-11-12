@@ -54,9 +54,9 @@ def render_sidebar():
             if label not in ["View my ICP"]:
                 if st.button(label, key=f"menu_{value}"):
                     if label == "New Chat":
-                        # Reset to default view for New Chat
+                        # Reset to home view
                         st.session_state.selected_option = None
-                        # Reset any active AI system states
+                        # Clear any active content state
                         if 'content_form_state' in st.session_state:
                             st.session_state.content_form_state = {
                                 'story': '',
