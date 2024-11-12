@@ -2,13 +2,14 @@ import streamlit as st
 from ai_utils import generate_marketing_content
 from database import db
 from emotion_engine import EmotionEngine, EmotionalProfile
+from ai_system import EnhancedAISystem
 import json
 import html
 import asyncio
 from typing import Dict, Optional, Any
 
 def generate_content_for_all_archetypes(story: str, content_type: str, platform: str, tone: str) -> Dict[str, Any]:
-    """Generate content for all archetypes simultaneously"""
+    """Generate content for all archetypes using enhanced AI system"""
     archetypes = {
         'autonomous': {
             'tone': 'professional and data-driven',
@@ -36,7 +37,7 @@ def generate_content_for_all_archetypes(story: str, content_type: str, platform:
     
     for archetype, traits in archetypes.items():
         try:
-            # Create prompt for this archetype
+            # Create enhanced prompt with emotional intelligence
             prompt = f"""
             Story: {story}
             Content Type: {content_type}
@@ -49,46 +50,32 @@ def generate_content_for_all_archetypes(story: str, content_type: str, platform:
             Writing Style: {traits['style']}
             """
             
-            # Generate content with proper error handling
-            try:
-                content = generate_marketing_content(prompt, content_type)
-            except Exception as e:
-                content = {
-                    'error': f"Content generation error: {str(e)}",
-                    'title': f"Error - {archetype}",
-                    'content': None,
-                    'keywords': [],
-                    'target_audience': ''
-                }
+            # Generate content using enhanced AI system
+            content = st.session_state.ai_system.generate_content(
+                story=prompt,
+                archetype=archetype,
+                content_type=content_type,
+                platform=platform,
+                tone=tone
+            )
             
-            # Get emotional profile with proper error handling
-            try:
-                emotional_profile = st.session_state.emotion_engine.analyze_emotional_context(
-                    archetype=archetype,
-                    brand_values=getattr(st.session_state, 'brand_values', {}),
-                    audience_data={'archetype': archetype}
-                )
-                
-                if emotional_profile:
-                    content['emotional_profile'] = {
-                        'primary_emotion': emotional_profile.primary_emotion,
-                        'intensity': emotional_profile.intensity,
-                        'triggers': emotional_profile.psychological_triggers
-                    }
-            except Exception as e:
-                content['emotional_profile'] = {
-                    'primary_emotion': archetype,
-                    'intensity': 0.5,
-                    'triggers': []
+            if content.get('error'):
+                results[archetype] = {
+                    'error': content['error'],
+                    'content': None
                 }
+                continue
             
-            results[archetype] = content
+            # Process the enhanced content
+            processed_content = generate_marketing_content(prompt, content_type)
+            processed_content['emotional_profile'] = content['emotional_profile']
+            
+            results[archetype] = processed_content
             
         except Exception as e:
             results[archetype] = {
-                'error': f"Error processing {archetype}: {str(e)}",
-                'content': None,
-                'emotional_profile': None
+                'error': str(e),
+                'content': f"Error generating content for {archetype}"
             }
     
     return results
@@ -106,6 +93,8 @@ def initialize_session_state():
         }
     if 'emotion_engine' not in st.session_state:
         st.session_state.emotion_engine = EmotionEngine()
+    if 'ai_system' not in st.session_state:
+        st.session_state.ai_system = EnhancedAISystem()
 
 def sanitize_input(text: str) -> str:
     """Sanitize input text to prevent injection and formatting issues"""
