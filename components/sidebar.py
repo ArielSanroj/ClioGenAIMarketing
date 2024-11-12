@@ -10,6 +10,9 @@ def render_sidebar():
             section[data-testid="stSidebar"] {
                 background-color: #FFFFFF;
                 border-right: 1px solid #E5E7EB;
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
             }
             .stButton>button {
                 width: 100%;
@@ -71,5 +74,15 @@ def render_sidebar():
                     elif value == "archetypes":
                         st.session_state.archetype_view = 'archetypes'
                     st.rerun()
+
+        # Add spacer to push logout button to bottom
+        st.markdown("<div style='flex-grow: 1;'></div>", unsafe_allow_html=True)
+        
+        # Add logout button at bottom
+        if st.button("Log out", key="logout_button"):
+            # Clear all session state
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+            st.rerun()
         
         return selected_option
