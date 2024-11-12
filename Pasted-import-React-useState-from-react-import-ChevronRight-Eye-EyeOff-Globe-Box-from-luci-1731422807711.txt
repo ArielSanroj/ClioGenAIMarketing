@@ -1,0 +1,209 @@
+import React, { useState } from 'react';
+import { ChevronRight, Eye, EyeOff, Globe, Box } from 'lucide-react';
+
+const RegistrationFlow = () => {
+  const [step, setStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: '',
+    surname: '',
+    cellphone: '',
+    purpose: ''
+  });
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const renderStep1 = () => (
+    <div className="w-full max-w-md p-6 space-y-4">
+      <div className="text-center mb-8">
+        <h1 className="text-2xl font-bold">Welcome to Clio AI</h1>
+      </div>
+      
+      <div className="space-y-4">
+        <div>
+          <input
+            type="email"
+            name="email"
+            placeholder="Email address"
+            className="w-full p-2 border rounded-md"
+            value={formData.email}
+            onChange={handleInputChange}
+          />
+        </div>
+        
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            name="password"
+            placeholder="Password"
+            className="w-full p-2 border rounded-md"
+            value={formData.password}
+            onChange={handleInputChange}
+          />
+          <button 
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-2 top-2.5 text-gray-500"
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </div>
+
+        <div className="flex justify-between text-sm">
+          <span>Don't have an account? <button className="text-blue-600">Sign Up</button></span>
+          <button className="text-blue-600">Remember password</button>
+        </div>
+
+        <button 
+          onClick={() => setStep(2)}
+          className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700"
+        >
+          Log In
+        </button>
+
+        <div className="space-y-2">
+          <button className="w-full border p-2 rounded-md flex items-center justify-center gap-2">
+            <Globe size={20} />
+            Sign Up with Google
+          </button>
+          <button className="w-full border p-2 rounded-md flex items-center justify-center gap-2">
+            <Box size={20} />
+            Sign Up with Microsoft
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div className="w-full max-w-md p-6 space-y-4">
+      <h2 className="text-xl font-semibold">Tell us more about yourself</h2>
+      
+      <div className="space-y-4">
+        <input
+          type="text"
+          name="name"
+          placeholder="Name"
+          className="w-full p-2 border rounded-md"
+          value={formData.name}
+          onChange={handleInputChange}
+        />
+        
+        <input
+          type="text"
+          name="surname"
+          placeholder="Surname"
+          className="w-full p-2 border rounded-md"
+          value={formData.surname}
+          onChange={handleInputChange}
+        />
+        
+        <input
+          type="tel"
+          name="cellphone"
+          placeholder="Cellphone"
+          className="w-full p-2 border rounded-md"
+          value={formData.cellphone}
+          onChange={handleInputChange}
+        />
+
+        <button 
+          onClick={() => setStep(3)}
+          className="w-full bg-gray-200 p-2 rounded-md hover:bg-gray-300 flex items-center justify-center gap-2"
+        >
+          Continue
+          <ChevronRight size={20} />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div className="w-full max-w-md p-6 space-y-4">
+      <h2 className="text-xl font-semibold">Help us know you better</h2>
+      
+      <div className="space-y-4">
+        <input
+          type="text"
+          name="name"
+          placeholder="Name"
+          className="w-full p-2 border rounded-md"
+          value={formData.name}
+          onChange={handleInputChange}
+        />
+        
+        <input
+          type="text"
+          name="surname"
+          placeholder="Surname"
+          className="w-full p-2 border rounded-md"
+          value={formData.surname}
+          onChange={handleInputChange}
+        />
+        
+        <select 
+          name="purpose"
+          className="w-full p-2 border rounded-md"
+          value={formData.purpose}
+          onChange={handleInputChange}
+        >
+          <option value="">How can we help you?</option>
+          <option value="education">For Education - Personalized Learning</option>
+          <option value="hr">For Human Resources</option>
+          <option value="marketing">For Marketing - Personalized Ads</option>
+        </select>
+
+        <input
+          type="tel"
+          name="cellphone"
+          placeholder="Cellphone"
+          className="w-full p-2 border rounded-md"
+          value={formData.cellphone}
+          onChange={handleInputChange}
+        />
+
+        <button 
+          onClick={() => console.log('Registration complete:', formData)}
+          className="w-full bg-gray-200 p-2 rounded-md hover:bg-gray-300 flex items-center justify-center gap-2"
+        >
+          Continue
+          <ChevronRight size={20} />
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 flex flex-col items-center justify-center">
+      <div className="mb-8">
+        <div className="w-16 h-16 relative">
+          <div className="w-16 h-16 border-4 border-amber-400 rounded-full" />
+          <div className="absolute top-0 right-0 flex space-x-1">
+            <div className="w-3 h-3 bg-blue-600 rounded-full" />
+            <div className="w-3 h-3 bg-purple-600 rounded-full" />
+            <div className="w-3 h-3 bg-red-500 rounded-full" />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        {step === 1 && renderStep1()}
+        {step === 2 && renderStep2()}
+        {step === 3 && renderStep3()}
+      </div>
+
+      <div className="mt-8 text-sm text-gray-600 flex gap-4">
+        <a href="#" className="hover:text-gray-900">Contact Us</a>
+        <a href="#" className="hover:text-gray-900">Privacy Policy</a>
+      </div>
+    </div>
+  );
+};
+
+export default RegistrationFlow;

@@ -7,6 +7,8 @@ from components.brand_values import render_brand_values
 from components.icp_definition import render_icp_definition
 from components.consumer_archetypes import render_consumer_archetypes
 from styles import apply_custom_styles
+from auth import is_authenticated
+from auth_pages import render_auth_pages
 
 def initialize_session_state():
     """Initialize the session state variables"""
@@ -36,7 +38,7 @@ def initialize_session_state():
             'is_completed': False
         }
     if 'selected_option' not in st.session_state:
-        st.session_state.selected_option = 'content'  # Set default to content generator
+        st.session_state.selected_option = 'content'
     if 'show_icp_questionnaire' not in st.session_state:
         st.session_state.show_icp_questionnaire = False
     if 'archetype_view' not in st.session_state:
@@ -45,88 +47,8 @@ def initialize_session_state():
         st.session_state.chat_history = []
     if 'current_chat_id' not in st.session_state:
         st.session_state.current_chat_id = None
-
-def render_icp_summary():
-    """Render the ICP summary view"""
-    st.markdown("### Your ICP Profile")
-    st.markdown(f"**Knowledge Level:** {st.session_state.icp_data['knowledge_level']}")
-    
-    st.markdown("**Your Answers:**")
-    for q_num in range(1, 6):
-        answer = st.session_state.icp_data['answers'].get(f"q{q_num}", "Not answered")
-        st.markdown(f"**Question {q_num}**")
-        if isinstance(answer, list):
-            for item in answer:
-                st.markdown(f"- {item}")
-        else:
-            st.markdown(f"{answer}")
-
-def render_chat_input():
-    """Render the chat input component"""
-    chat_container = st.container()
-    with chat_container:
-        st.markdown("""
-            <div class="chat-container">
-                <div style="display: flex; align-items: center;">
-                    <input type="text" class="chat-input" placeholder="Message Clio AI">
-                    <button class="send-button">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="22" y1="2" x2="11" y2="13"></line>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-def render_dashboard():
-    """Render the main dashboard after onboarding is completed"""
-    # Render sidebar and get selected option
-    selected_option = render_sidebar()
-    
-    # Handle navigation from sidebar
-    if selected_option:
-        st.session_state.selected_option = selected_option
-    
-    # Main content area
-    if st.session_state.selected_option == "home" or st.session_state.selected_option == "new_chat":
-        # Render the home chat interface
-        st.markdown('<div class="centered-container">', unsafe_allow_html=True)
-        st.image("logoclio.png", width=100)
-        
-        # Add the two action buttons
-        col1, col2 = st.columns(2)  # Changed from 3 columns to 2
-        with col1:
-            if st.button("Generate Content Marketing"):
-                st.session_state.selected_option = "content"
-                st.rerun()
-        with col2:
-            if st.button("Create Social Media Campaign"):
-                st.session_state.selected_option = "social"
-                st.rerun()
-                
-        # Add the chat input at the bottom
-        st.markdown('''
-            <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 80%; max-width: 800px;">
-                <div style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <input type="text" placeholder="Message Clio AI" style="width: 100%; padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 8px;">
-                </div>
-            </div>
-        ''', unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-    elif st.session_state.selected_option == "content":
-        render_content_generator()
-    elif st.session_state.selected_option == "social":
-        render_social_media_campaign()
-    elif st.session_state.selected_option == "market_analysis":
-        render_seo_analyzer()
-    elif st.session_state.selected_option == "archetypes":
-        render_consumer_archetypes()
-    elif st.session_state.selected_option == "icp_questionnaire":
-        render_icp_definition()
-    elif st.session_state.selected_option == "icp_summary":
-        render_icp_summary()
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = None
 
 def main():
     st.set_page_config(
@@ -142,6 +64,11 @@ def main():
     # Apply custom styles
     apply_custom_styles()
     
+    # Check authentication
+    if not is_authenticated():
+        render_auth_pages()
+        return
+    
     # Main flow condition
     if not st.session_state.brand_values.get('is_completed', False):
         st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
@@ -152,7 +79,28 @@ def main():
         render_icp_definition()
         st.markdown('</div>', unsafe_allow_html=True)
     else:
-        render_dashboard()
+        # Render sidebar and get selected option
+        selected_option = render_sidebar()
+        
+        # Handle navigation from sidebar
+        if selected_option:
+            st.session_state.selected_option = selected_option
+        
+        # Main content area
+        if st.session_state.selected_option == "home":
+            render_dashboard()
+        elif st.session_state.selected_option == "content":
+            render_content_generator()
+        elif st.session_state.selected_option == "social":
+            render_social_media_campaign()
+        elif st.session_state.selected_option == "market_analysis":
+            render_seo_analyzer()
+        elif st.session_state.selected_option == "archetypes":
+            render_consumer_archetypes()
+        elif st.session_state.selected_option == "icp_questionnaire":
+            render_icp_definition()
+        elif st.session_state.selected_option == "icp_summary":
+            render_icp_summary()
 
 if __name__ == "__main__":
     main()
