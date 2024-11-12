@@ -17,6 +17,10 @@ def render_brand_values():
     initialize_brand_values_state()
     user_id = get_current_user_id()
     
+    if not user_id:
+        st.error("User ID not found. Please log in again.")
+        return
+    
     # Add centered container
     st.markdown('<div class="centered-container">', unsafe_allow_html=True)
     
@@ -42,7 +46,7 @@ def render_brand_values():
         st.markdown("### What are the virtues and values of your brand?")
         
         # Convert list to string for text input
-        current_values = ', '.join((get_user_state(user_id, "brand_values") or {}).get('values', []))
+        current_values = ', '.join(brand_values.get('values', []))
         values = st.text_area(
             "Core Values",
             value=current_values,
@@ -50,7 +54,7 @@ def render_brand_values():
             height=100
         )
         
-        current_virtues = ', '.join((get_user_state(user_id, "brand_values") or {}).get('virtues', []))
+        current_virtues = ', '.join(brand_values.get('virtues', []))
         virtues = st.text_area(
             "Brand Virtues",
             value=current_virtues,
@@ -70,6 +74,7 @@ def render_brand_values():
                     'is_completed': True
                 }
                 set_user_state(user_id, "brand_values", brand_values)
+                
                 # Initialize ICP state and set selected_option to icp_questionnaire
                 set_user_state(user_id, "icp_data", {
                     'knowledge_level': '',
@@ -118,6 +123,7 @@ def render_brand_values():
             'is_completed': True  # Mark as completed even though skipped
         }
         set_user_state(user_id, "brand_values", brand_values)
+        
         # Initialize ICP state and set selected_option to icp_questionnaire
         set_user_state(user_id, "icp_data", {
             'knowledge_level': '',
