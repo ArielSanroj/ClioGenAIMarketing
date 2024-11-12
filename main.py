@@ -50,6 +50,51 @@ def initialize_session_state():
     if 'user_id' not in st.session_state:
         st.session_state.user_id = None
 
+def render_dashboard():
+    """Render the home chat interface"""
+    # Apply styles for centered layout
+    st.markdown('<div class="centered-container">', unsafe_allow_html=True)
+    
+    # Show logo
+    st.image("logoclio.png", width=100)
+    
+    # Add the two action buttons in a centered layout
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Generate Content Marketing"):
+            st.session_state.selected_option = "content"
+            st.rerun()
+    with col2:
+        if st.button("Create Social Media Campaign"):
+            st.session_state.selected_option = "social"
+            st.rerun()
+    
+    # Add chat input at the bottom
+    st.markdown('''
+        <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 80%; max-width: 800px;">
+            <div style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <input type="text" placeholder="Message Clio AI" style="width: 100%; padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 8px;">
+            </div>
+        </div>
+    ''', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def render_icp_summary():
+    """Render the ICP summary view"""
+    st.markdown("### Your ICP Profile")
+    st.markdown(f"**Knowledge Level:** {st.session_state.icp_data['knowledge_level']}")
+    
+    st.markdown("**Your Answers:**")
+    for q_num in range(1, 6):
+        answer = st.session_state.icp_data['answers'].get(f"q{q_num}", "Not answered")
+        st.markdown(f"**Question {q_num}**")
+        if isinstance(answer, list):
+            for item in answer:
+                st.markdown(f"- {item}")
+        else:
+            st.markdown(f"{answer}")
+
 def main():
     st.set_page_config(
         page_title="AI Marketing Assistant",
