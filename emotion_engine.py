@@ -1,37 +1,10 @@
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Optional
 import numpy as np
 from dataclasses import dataclass
-from datetime import datetime
-from enum import Enum
-
-class ContentType(Enum):
-    TEXT = "text"
-    IMAGE = "image"
-    VIDEO = "video"
-    AUDIO = "audio"
-    INTERACTIVE = "interactive"
-
-class EmotionalTone(Enum):
-    EXCITED = "excited"
-    EMPATHETIC = "empathetic"
-    PROFESSIONAL = "professional"
-    FRIENDLY = "friendly"
-    URGENT = "urgent"
-
-@dataclass
-class BehavioralPattern:
-    """Enhanced behavioral pattern tracking"""
-    interaction_history: List[Dict[str, Any]]
-    engagement_scores: Dict[str, float]
-    conversion_points: List[Dict[str, Any]]
-    attention_spans: Dict[str, float]
-    device_preferences: Dict[str, float]
-    time_sensitivity: Dict[str, List[datetime]]
-    content_affinity: Dict[ContentType, float]
+import json
 
 @dataclass
 class EmotionalProfile:
-    """Emotional profile with enhanced attributes"""
     primary_emotion: str
     intensity: float
     secondary_emotions: List[str]
@@ -100,7 +73,9 @@ class EmotionEngine:
                                 archetype: str, 
                                 brand_values: dict,
                                 audience_data: dict) -> Optional[EmotionalProfile]:
-        """Analyze emotional context based on archetype, brand values, and audience data"""
+        """
+        Analyze emotional context based on archetype, brand values, and audience data
+        """
         try:
             # Get base emotional vector for archetype
             base_vector = self.emotion_vectors.get(archetype.lower())
@@ -203,10 +178,12 @@ class EmotionEngine:
 
     def _adjust_tone(self, content: str, tone_mapping: Dict[str, float]) -> str:
         """Adjust content tone based on tone mapping"""
-        # Placeholder for tone adjustment logic
+        # This is a placeholder for tone adjustment logic
+        # In a real implementation, this would use NLP to modify sentence structures
         return content
 
     def _insert_triggers(self, content: str, triggers: List[str]) -> str:
         """Insert psychological triggers into content"""
-        # Placeholder for trigger insertion logic
+        # This is a placeholder for trigger insertion logic
+        # In a real implementation, this would strategically place triggers
         return content

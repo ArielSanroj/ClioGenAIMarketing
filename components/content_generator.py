@@ -2,36 +2,13 @@ import streamlit as st
 from ai_utils import generate_marketing_content
 from database import db
 from emotion_engine import EmotionEngine, EmotionalProfile
-from ai_system import EnhancedAISystem, ContentOrchestrator
-from marketing_campaign_system import FeedbackLoop
 import json
 import html
 import asyncio
 from typing import Dict, Optional, Any
-from datetime import datetime
 
-def initialize_session_state():
-    """Initialize session state variables if they don't exist"""
-    if 'content_form_state' not in st.session_state:
-        st.session_state.content_form_state = {
-            'story': '',
-            'content_type': '',
-            'platform': '',
-            'tone': '',
-            'competitor_insights': '',
-            'generated_content': None
-        }
-    if 'emotion_engine' not in st.session_state:
-        st.session_state.emotion_engine = EmotionEngine()
-    if 'ai_system' not in st.session_state:
-        st.session_state.ai_system = EnhancedAISystem()
-    if 'content_orchestrator' not in st.session_state:
-        st.session_state.content_orchestrator = ContentOrchestrator()
-    if 'feedback_loop' not in st.session_state:
-        st.session_state.feedback_loop = FeedbackLoop()
-
-async def generate_content_for_all_archetypes(story: str, content_type: str, platform: str, tone: str) -> Dict[str, Any]:
-    """Generate content for all archetypes using enhanced AI system with emotional intelligence"""
+def generate_content_for_all_archetypes(story: str, content_type: str, platform: str, tone: str) -> Dict[str, Any]:
+    """Generate content for all archetypes simultaneously"""
     archetypes = {
         'autonomous': {
             'tone': 'professional and data-driven',
@@ -59,18 +36,7 @@ async def generate_content_for_all_archetypes(story: str, content_type: str, pla
     
     for archetype, traits in archetypes.items():
         try:
-            # Create behavioral pattern for the archetype
-            behavioral_pattern = {
-                'interaction_history': [],
-                'engagement_scores': {},
-                'conversion_points': [],
-                'attention_spans': {},
-                'device_preferences': {},
-                'time_sensitivity': {},
-                'content_affinity': {}
-            }
-            
-            # Create enhanced prompt with emotional intelligence
+            # Create prompt for this archetype
             prompt = f"""
             Story: {story}
             Content Type: {content_type}
@@ -83,59 +49,82 @@ async def generate_content_for_all_archetypes(story: str, content_type: str, pla
             Writing Style: {traits['style']}
             """
             
-            # Generate content using enhanced AI system
-            content = await st.session_state.ai_system.generate_content(
-                story=prompt,
-                archetype=archetype,
-                content_type=content_type,
-                platform=platform,
-                tone=tone
-            )
+            # Generate content with proper error handling
+            try:
+                content = generate_marketing_content(prompt, content_type)
+            except Exception as e:
+                content = {
+                    'error': f"Content generation error: {str(e)}",
+                    'title': f"Error - {archetype}",
+                    'content': None,
+                    'keywords': [],
+                    'target_audience': ''
+                }
             
-            # Process and personalize content using the emotion engine
-            emotional_profile = st.session_state.emotion_engine.analyze_emotional_context(
-                archetype=archetype,
-                brand_values={},  # Add brand values from session state if available
-                audience_data={'archetype': archetype, 'behavioral_pattern': behavioral_pattern}
-            )
-            
-            if emotional_profile:
-                # Track interaction in feedback loop
-                await st.session_state.feedback_loop.process_interaction({
-                    'archetype': archetype,
-                    'content_type': content_type,
-                    'platform': platform,
-                    'timestamp': datetime.utcnow(),
-                    'emotional_profile': {
+            # Get emotional profile with proper error handling
+            try:
+                emotional_profile = st.session_state.emotion_engine.analyze_emotional_context(
+                    archetype=archetype,
+                    brand_values=getattr(st.session_state, 'brand_values', {}),
+                    audience_data={'archetype': archetype}
+                )
+                
+                if emotional_profile:
+                    content['emotional_profile'] = {
                         'primary_emotion': emotional_profile.primary_emotion,
                         'intensity': emotional_profile.intensity,
                         'triggers': emotional_profile.psychological_triggers
-                    },
-                    'behavioral_pattern': behavioral_pattern
-                })
-                
-                # Add emotional profile to content
+                    }
+            except Exception as e:
                 content['emotional_profile'] = {
-                    'primary_emotion': emotional_profile.primary_emotion,
-                    'intensity': emotional_profile.intensity,
-                    'triggers': emotional_profile.psychological_triggers,
-                    'tone': emotional_profile.content_tone
+                    'primary_emotion': archetype,
+                    'intensity': 0.5,
+                    'triggers': []
                 }
             
             results[archetype] = content
             
         except Exception as e:
             results[archetype] = {
-                'error': str(e),
-                'content': f"Error generating content for {archetype}"
+                'error': f"Error processing {archetype}: {str(e)}",
+                'content': None,
+                'emotional_profile': None
             }
     
     return results
+
+def initialize_session_state():
+    """Initialize session state variables if they don't exist"""
+    if 'content_form_state' not in st.session_state:
+        st.session_state.content_form_state = {
+            'story': '',
+            'content_type': '',
+            'platform': '',
+            'tone': '',
+            'competitor_insights': '',
+            'generated_content': None
+        }
+    if 'emotion_engine' not in st.session_state:
+        st.session_state.emotion_engine = EmotionEngine()
+
+def sanitize_input(text: str) -> str:
+    """Sanitize input text to prevent injection and formatting issues"""
+    if not text:
+        return ""
+    sanitized = html.escape(text.strip())
+    return ' '.join(sanitized.split())
 
 def render_content_generator():
     # Apply custom styles
     st.markdown("""
         <style>
+        .main { 
+            background-color: #F9F9FB !important; 
+            padding: 40px !important;
+        }
+        .stApp { 
+            background-color: #F9F9FB !important; 
+        }
         .header-container {
             display: flex;
             justify-content: space-between;
@@ -147,19 +136,115 @@ def render_content_generator():
             width: 60px;
             height: auto;
         }
-        .nav-btn {
+        .go-back-btn {
             background-color: #1E1B4B;
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 12px;
             font-weight: 500;
-            border: none;
-            cursor: pointer;
+            text-decoration: none;
             transition: all 0.2s ease-in-out;
         }
-        .nav-btn:hover {
+        .go-back-btn:hover {
             background-color: #2D2A5C;
             transform: translateY(-1px);
+        }
+        .card-container {
+            background-color: #FFFFFF;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            height: 100%;
+            margin-bottom: 2rem;
+        }
+        .label-text {
+            color: #1E1B4B !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            margin-bottom: 0.75rem !important;
+            display: block !important;
+        }
+        .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+            background-color: white !important;
+            border: 1px solid #E5E7EB !important;
+            border-radius: 12px !important;
+            padding: 1rem !important;
+            font-size: 1rem !important;
+            color: #1E1B4B !important;
+            min-height: 150px !important;
+            box-shadow: none !important;
+            margin-bottom: 24px !important;
+            transition: border-color 0.2s ease-in-out !important;
+        }
+        .stTextInput>div>div>input:hover, .stTextArea>div>div>textarea:hover {
+            border-color: #1E1B4B !important;
+        }
+        .stSelectbox>div>div>div {
+            background-color: white !important;
+            border: 1px solid #E5E7EB !important;
+            border-radius: 12px !important;
+            padding: 1rem !important;
+            font-size: 1rem !important;
+            color: #1E1B4B !important;
+            height: 56px !important;
+            margin-bottom: 24px !important;
+            transition: border-color 0.2s ease-in-out !important;
+        }
+        .stSelectbox>div>div>div:hover {
+            border-color: #1E1B4B !important;
+        }
+        .stSelectbox [data-baseweb="select"] {
+            height: 56px !important;
+            background-color: white !important;
+        }
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+            margin-bottom: 1.5rem;
+            background-color: transparent;
+        }
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            background-color: #F3F4F6;
+            color: #4B5563;
+            font-weight: 500;
+            border: none;
+            transition: all 0.2s ease-in-out;
+        }
+        .stTabs [aria-selected="true"] {
+            background-color: #1E1B4B !important;
+            color: white !important;
+        }
+        .stButton>button {
+            background-color: #1E1B4B !important;
+            color: white !important;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 12px !important;
+            font-weight: 500 !important;
+            width: 100% !important;
+            height: 56px !important;
+            margin-top: 1rem !important;
+            transition: all 0.2s ease-in-out !important;
+        }
+        .stButton>button:hover {
+            background-color: #2D2A5C !important;
+            transform: translateY(-1px) !important;
+        }
+        .generated-content-placeholder {
+            color: #6B7280 !important;
+            font-style: italic !important;
+            text-align: center !important;
+            margin-top: 2rem !important;
+        }
+        h2 {
+            color: #1E1B4B !important;
+            font-size: 24px !important;
+            font-weight: 600 !important;
+            margin-bottom: 1.5rem !important;
+        }
+        ::placeholder {
+            color: #6B7280 !important;
+            opacity: 1 !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -168,18 +253,13 @@ def render_content_generator():
     initialize_session_state()
 
     # Header with logo and go back button
-    st.markdown('''
+    st.markdown("""
         <div class="header-container">
             <img src="logoclio.png" alt="Logo" class="logo">
-            <button class="nav-btn" onclick="window.location.href='#'" id="go-back-btn">Go back</button>
+            <a href="#" class="go-back-btn">Go back</a>
         </div>
-    ''', unsafe_allow_html=True)
-
-    # Add button click handler for go back
-    if st.button("Go back", key="go_back"):
-        st.session_state.selected_option = None
-        st.rerun()
-
+    """, unsafe_allow_html=True)
+    
     # Main content area with two columns
     col1, col2 = st.columns(2, gap="large")
 
@@ -232,26 +312,26 @@ def render_content_generator():
                 st.error("Please enter a story to generate content.")
                 return
                 
-            with st.spinner("Generating content with emotional intelligence..."):
+            with st.spinner("Generating content for all archetypes..."):
                 try:
                     # Generate content for all archetypes
-                    all_content = asyncio.run(generate_content_for_all_archetypes(
-                        story=story,
+                    all_content = generate_content_for_all_archetypes(
+                        story=sanitize_input(story),
                         content_type=content_type,
                         platform=platform,
                         tone=tone
-                    ))
+                    )
                     
                     st.session_state.content_form_state['generated_content'] = all_content
                     
-                    # Save to database
+                    # Save to database with proper error handling
                     for archetype, content in all_content.items():
-                        if content and not content.get('error'):
+                        if content and content.get('content'):
                             try:
                                 db.save_campaign(
                                     business_name=f"{story[:50]}_{archetype}",
                                     campaign_type=content_type,
-                                    content=content.get('content', ''),
+                                    content=content['content'],
                                     emotional_profile=content.get('emotional_profile', {})
                                 )
                             except Exception as e:
@@ -274,37 +354,28 @@ def render_content_generator():
                 "Autonomous", "Impulsive", "Avoidant", "Isolated"
             ])
             
-            for tab, archetype in zip(tabs, ["autonomous", "impulsive", "avoidant", "isolated"]):
+            archetypes = ["autonomous", "impulsive", "avoidant", "isolated"]
+            
+            for tab, archetype in zip(tabs, archetypes):
                 with tab:
                     content = st.session_state.content_form_state['generated_content'].get(archetype, {})
-                    
+                    if not content:
+                        st.info(f"No content generated for {archetype} archetype yet.")
+                        continue
+                        
                     if content.get('error'):
                         st.error(content['error'])
                         continue
-                    
-                    # Display emotional analysis
+                        
+                    # Display emotional profile
                     if content.get('emotional_profile'):
-                        with st.expander("🧠 Emotional Intelligence Analysis", expanded=True):
-                            st.markdown('<div class="emotional-analysis">', unsafe_allow_html=True)
-                            
-                            # Primary emotion and intensity
-                            st.markdown(
-                                f"**Primary Emotion:** {content['emotional_profile']['primary_emotion']}\n\n"
-                                f"**Emotional Intensity:** {content['emotional_profile']['intensity']:.2f}"
-                            )
-                            
-                            # Psychological triggers
-                            st.markdown("**Psychological Triggers:**")
-                            for trigger in content['emotional_profile']['triggers']:
-                                st.markdown(f"- {trigger}")
-                            
-                            # Content tone mapping
-                            if 'tone' in content['emotional_profile']:
-                                st.markdown("**Content Tone Analysis:**")
-                                for tone, weight in content['emotional_profile']['tone'].items():
-                                    st.progress(weight, text=f"{tone.capitalize()}: {weight:.2f}")
-                            
-                            st.markdown('</div>', unsafe_allow_html=True)
+                        with st.expander("Emotional Analysis"):
+                            st.write("Primary Emotion:", 
+                                   content['emotional_profile']['primary_emotion'])
+                            st.write("Emotional Intensity:", 
+                                   f"{content['emotional_profile']['intensity']:.2f}")
+                            st.write("Psychological Triggers:", 
+                                   ", ".join(content['emotional_profile']['triggers']))
                     
                     # Display content sections
                     if content.get('title'):
@@ -325,7 +396,7 @@ def render_content_generator():
                         st.markdown("### Target Audience")
                         st.markdown(content['target_audience'])
                     
-                    # Download button
+                    # Download button for this archetype
                     if content.get('content'):
                         download_content = f"""
                         Archetype: {archetype.upper()}
@@ -341,23 +412,21 @@ def render_content_generator():
                         Target Audience:
                         {content.get('target_audience', '')}
                         
-                        Emotional Intelligence Analysis:
+                        Emotional Analysis:
                         Primary Emotion: {content.get('emotional_profile', {}).get('primary_emotion', 'N/A')}
                         Emotional Intensity: {content.get('emotional_profile', {}).get('intensity', 'N/A')}
                         Psychological Triggers: {', '.join(content.get('emotional_profile', {}).get('triggers', []))}
                         """
                         
                         st.download_button(
-                            f"📥 Export {archetype.capitalize()} Content",
+                            f"Export {archetype.capitalize()} Content",
                             download_content,
                             file_name=f"{archetype}_{content.get('title', 'generated').lower().replace(' ', '_')}.txt",
                             mime="text/plain"
                         )
         else:
-            st.markdown(
-                '<p class="generated-content-placeholder">Generated content will appear here...</p>', 
-                unsafe_allow_html=True
-            )
+            st.markdown('<p class="generated-content-placeholder">Generated content will appear here...</p>', 
+                       unsafe_allow_html=True)
         
         st.markdown('</div>', unsafe_allow_html=True)
 

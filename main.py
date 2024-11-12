@@ -29,8 +29,6 @@ def initialize_session_state():
             'answers': {},
             'is_completed': True
         }
-    if 'chat_messages' not in st.session_state:
-        st.session_state.chat_messages = []
     if 'webpage_analysis' not in st.session_state:
         st.session_state.webpage_analysis = {
             'url': '',
@@ -38,62 +36,56 @@ def initialize_session_state():
             'is_completed': False
         }
     if 'selected_option' not in st.session_state:
-        st.session_state.selected_option = None  # Default to home view
+        st.session_state.selected_option = 'content'  # Set default to content generator
     if 'show_icp_questionnaire' not in st.session_state:
         st.session_state.show_icp_questionnaire = False
     if 'archetype_view' not in st.session_state:
         st.session_state.archetype_view = 'archetypes'
 
+def render_icp_summary():
+    """Render the ICP summary view"""
+    st.markdown("### Your ICP Profile")
+    st.markdown(f"**Knowledge Level:** {st.session_state.icp_data['knowledge_level']}")
+    
+    st.markdown("**Your Answers:**")
+    for q_num in range(1, 6):
+        answer = st.session_state.icp_data['answers'].get(f"q{q_num}", "Not answered")
+        st.markdown(f"**Question {q_num}**")
+        if isinstance(answer, list):
+            for item in answer:
+                st.markdown(f"- {item}")
+        else:
+            st.markdown(f"{answer}")
+
 def render_chat_input():
-    """Render the chat input component with the new design"""
-    st.markdown('''
-        <div class="chat-input-container">
-            <input type="text" class="chat-input" placeholder="Message Clio AI">
-            <button class="send-button">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M22 2L11 13" stroke="currentColor" stroke-width="2"/>
-                    <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2"/>
-                </svg>
-            </button>
-        </div>
-    ''', unsafe_allow_html=True)
+    """Render the chat input component"""
+    chat_container = st.container()
+    with chat_container:
+        st.markdown("""
+            <div class="chat-container">
+                <div style="display: flex; align-items: center;">
+                    <input type="text" class="chat-input" placeholder="Message Clio AI">
+                    <button class="send-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
 def render_dashboard():
-    """Render the main dashboard with enhanced UI"""
+    """Render the main dashboard after onboarding is completed"""
     # Render sidebar and get selected option
     selected_option = render_sidebar()
     
+    # Handle navigation from sidebar
     if selected_option:
         st.session_state.selected_option = selected_option
     
     # Main content area
-    if st.session_state.selected_option is None:
-        # Home chat view with centered buttons
-        st.markdown('''
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 200px); padding: 0 1rem;">
-                <div style="width: 100%; max-width: 600px;">
-                    <button class="nav-option" onclick="window.location.href='#content'" data-action="content">
-                        Generate Content Marketing
-                    </button>
-                    <button class="nav-option" onclick="window.location.href='#social'" data-action="social">
-                        Create Social Media Campaign
-                    </button>
-                    <button class="nav-option" onclick="window.location.href='#seo'" data-action="seo">
-                        Generate SEO recommendations
-                    </button>
-                </div>
-            </div>
-        ''', unsafe_allow_html=True)
-        
-        # Display chat messages
-        if st.session_state.chat_messages:
-            for message in st.session_state.chat_messages:
-                st.write(message)
-        
-        # Chat input at bottom
-        render_chat_input()
-        
-    elif st.session_state.selected_option == "content":
+    if st.session_state.selected_option == "content":
         render_content_generator()
     elif st.session_state.selected_option == "social":
         render_social_media_campaign()
@@ -105,6 +97,8 @@ def render_dashboard():
         render_icp_definition()
     elif st.session_state.selected_option == "icp_summary":
         render_icp_summary()
+    else:
+        render_content_generator()  # Default to content generator
 
 def main():
     st.set_page_config(
