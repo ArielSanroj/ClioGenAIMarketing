@@ -23,6 +23,30 @@ def render_login_page():
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+        /* New input field styles */
+        .stTextInput>div>div>input {
+            color: #1E1B4B !important;
+            background-color: white !important;
+            border: 1px solid #E5E7EB !important;
+            border-radius: 8px !important;
+            padding: 0.75rem !important;
+            font-size: 1rem !important;
+            transition: border-color 0.2s ease !important;
+        }
+        .stTextInput>div>div>input:focus {
+            border-color: #1E1B4B !important;
+            box-shadow: 0 0 0 2px rgba(30, 27, 75, 0.1) !important;
+        }
+        .stTextInput>div>div>input::placeholder {
+            color: #6B7280 !important;
+            opacity: 1 !important;
+        }
+        .stSelectbox>div>div>div {
+            color: #1E1B4B !important;
+            background-color: white !important;
+            border: 1px solid #E5E7EB !important;
+            border-radius: 8px !important;
+        }
         </style>
     """, unsafe_allow_html=True)
     
