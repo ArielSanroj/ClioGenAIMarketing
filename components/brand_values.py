@@ -1,18 +1,21 @@
 import streamlit as st
+from utils.session_manager import get_user_state, set_user_state, get_current_user_id
 
 def initialize_brand_values_state():
     """Initialize brand values session state"""
-    if 'brand_values' not in st.session_state:
-        st.session_state.brand_values = {
+    user_id = get_current_user_id()
+    if not get_user_state(user_id, "brand_values"):
+        set_user_state(user_id, "brand_values", {
             'mission': '',
             'values': [],
             'virtues': [],
             'is_completed': False
-        }
+        })
 
 def render_brand_values():
     """Render the brand values and virtues form"""
     initialize_brand_values_state()
+    user_id = get_current_user_id()
     
     # Add centered container
     st.markdown('<div class="centered-container">', unsafe_allow_html=True)
@@ -30,7 +33,7 @@ def render_brand_values():
     with st.form(key='brand_values_form', clear_on_submit=False):
         mission = st.text_area(
             "What is your company's mission?",
-            value=st.session_state.brand_values.get('mission', ''),
+            value=get_user_state(user_id, "brand_values").get('mission', ''),
             height=100,
             help="Define your company's purpose and goals in a clear, concise statement."
         )
@@ -38,7 +41,7 @@ def render_brand_values():
         st.markdown("### What are the virtues and values of your brand?")
         
         # Convert list to string for text input
-        current_values = ', '.join(st.session_state.brand_values.get('values', []))
+        current_values = ', '.join(get_user_state(user_id, "brand_values").get('values', []))
         values = st.text_area(
             "Core Values",
             value=current_values,
@@ -46,7 +49,7 @@ def render_brand_values():
             height=100
         )
         
-        current_virtues = ', '.join(st.session_state.brand_values.get('virtues', []))
+        current_virtues = ', '.join(get_user_state(user_id, "brand_values").get('virtues', []))
         virtues = st.text_area(
             "Brand Virtues",
             value=current_virtues,
@@ -58,15 +61,16 @@ def render_brand_values():
         
         if submit_button:
             if mission and values and virtues:
-                # Update session state
-                st.session_state.brand_values.update({
+                # Update session state using session manager
+                brand_values = {
                     'mission': mission,
                     'values': [v.strip() for v in values.split(',') if v.strip()],
                     'virtues': [v.strip() for v in virtues.split(',') if v.strip()],
                     'is_completed': True
-                })
+                }
+                set_user_state(user_id, "brand_values", brand_values)
                 st.success("Brand values saved successfully!")
-                st.rerun()  # Add rerun to force page refresh
+                st.rerun()
             else:
                 st.error("Please fill in all fields before proceeding.")
     
@@ -75,14 +79,13 @@ def render_brand_values():
     with col2:
         if st.button("Skip", type="secondary"):
             # Update session state to skip brand values
-            st.session_state.brand_values.update({
+            brand_values = {
                 'mission': '',
                 'values': [],
                 'virtues': [],
                 'is_completed': True  # Mark as completed even though skipped
-            })
-            # Set show_icp_questionnaire to true to move to ICP
-            st.session_state.show_icp_questionnaire = True
+            }
+            set_user_state(user_id, "brand_values", brand_values)
             st.rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
