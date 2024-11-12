@@ -41,6 +41,10 @@ def initialize_session_state():
         st.session_state.show_icp_questionnaire = False
     if 'archetype_view' not in st.session_state:
         st.session_state.archetype_view = 'archetypes'
+    if 'chat_history' not in st.session_state:
+        st.session_state.chat_history = []
+    if 'current_chat_id' not in st.session_state:
+        st.session_state.current_chat_id = None
 
 def render_icp_summary():
     """Render the ICP summary view"""

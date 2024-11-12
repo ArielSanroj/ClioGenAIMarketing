@@ -51,11 +51,17 @@ def render_sidebar():
         
         # Handle other navigation buttons
         for label, value in menu_options.items():
-            if label not in ["View my ICP"] and st.button(label, key=f"menu_{value}"):
-                selected_option = value
-                st.session_state.selected_option = value
-                if value == "archetypes":
-                    st.session_state.archetype_view = 'archetypes'
-                st.rerun()
+            if label not in ["View my ICP"]:
+                if st.button(label, key=f"menu_{value}"):
+                    selected_option = value
+                    st.session_state.selected_option = value
+                    # Reset chat state when clicking "New Chat"
+                    if value == "new_chat":
+                        st.session_state.chat_history = []
+                        st.session_state.current_chat_id = None
+                        st.session_state.selected_option = "content"  # Return to home chat interface
+                    elif value == "archetypes":
+                        st.session_state.archetype_view = 'archetypes'
+                    st.rerun()
         
         return selected_option
