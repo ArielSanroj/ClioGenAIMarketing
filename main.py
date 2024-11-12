@@ -94,8 +94,8 @@ def render_dashboard():
         st.markdown('<div class="centered-container">', unsafe_allow_html=True)
         st.image("logoclio.png", width=100)
         
-        # Add the three action buttons
-        col1, col2, col3 = st.columns(3)
+        # Add the two action buttons
+        col1, col2 = st.columns(2)  # Changed from 3 columns to 2
         with col1:
             if st.button("Generate Content Marketing"):
                 st.session_state.selected_option = "content"
@@ -103,10 +103,6 @@ def render_dashboard():
         with col2:
             if st.button("Create Social Media Campaign"):
                 st.session_state.selected_option = "social"
-                st.rerun()
-        with col3:
-            if st.button("Generate SEO recommendations"):
-                st.session_state.selected_option = "market_analysis"
                 st.rerun()
                 
         # Add the chat input at the bottom
