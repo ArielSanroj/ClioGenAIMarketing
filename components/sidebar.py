@@ -59,7 +59,15 @@ def render_sidebar():
                     if value == "new_chat":
                         st.session_state.chat_history = []
                         st.session_state.current_chat_id = None
-                        st.session_state.selected_option = "content"  # Return to home chat interface
+                        st.session_state.selected_option = "home"  # Changed to "home"
+                        st.session_state.content_form_state = {  # Reset content form state
+                            'story': '',
+                            'content_type': '',
+                            'platform': '',
+                            'tone': '',
+                            'competitor_insights': '',
+                            'generated_content': None
+                        }
                     elif value == "archetypes":
                         st.session_state.archetype_view = 'archetypes'
                     st.rerun()

@@ -89,7 +89,37 @@ def render_dashboard():
         st.session_state.selected_option = selected_option
     
     # Main content area
-    if st.session_state.selected_option == "content":
+    if st.session_state.selected_option == "home" or st.session_state.selected_option == "new_chat":
+        # Render the home chat interface
+        st.markdown('<div class="centered-container">', unsafe_allow_html=True)
+        st.image("logoclio.png", width=100)
+        
+        # Add the three action buttons
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("Generate Content Marketing"):
+                st.session_state.selected_option = "content"
+                st.rerun()
+        with col2:
+            if st.button("Create Social Media Campaign"):
+                st.session_state.selected_option = "social"
+                st.rerun()
+        with col3:
+            if st.button("Generate SEO recommendations"):
+                st.session_state.selected_option = "market_analysis"
+                st.rerun()
+                
+        # Add the chat input at the bottom
+        st.markdown('''
+            <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 80%; max-width: 800px;">
+                <div style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <input type="text" placeholder="Message Clio AI" style="width: 100%; padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 8px;">
+                </div>
+            </div>
+        ''', unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    elif st.session_state.selected_option == "content":
         render_content_generator()
     elif st.session_state.selected_option == "social":
         render_social_media_campaign()
@@ -101,8 +131,6 @@ def render_dashboard():
         render_icp_definition()
     elif st.session_state.selected_option == "icp_summary":
         render_icp_summary()
-    else:
-        render_content_generator()  # Default to content generator
 
 def main():
     st.set_page_config(
