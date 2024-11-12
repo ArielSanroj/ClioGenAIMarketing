@@ -34,18 +34,52 @@ def apply_custom_styles():
             text-align: center;
         }
         
-        /* Form styling */
-        .stTextInput > label, .stTextArea > label {
+        /* Form styling - Updated for better visibility */
+        .stTextInput > label, .stTextArea > label, .stSelectbox > label {
             font-size: 1rem;
             color: #28264D;
-            font-weight: 500;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
         }
         
-        .stTextInput > div > div > input, .stTextArea > div > textarea {
-            background-color: white;
-            border: 1px solid #E5E7EB;
-            border-radius: 8px;
-            padding: 0.75rem;
+        /* Enhanced text input styling */
+        .stTextInput > div > div > input, 
+        .stTextArea > div > div > textarea,
+        .stSelectbox > div > div > div {
+            background-color: #FFFFFF !important;
+            border: 2px solid #E5E7EB !important;
+            border-radius: 8px !important;
+            padding: 0.875rem !important;
+            font-size: 1rem !important;
+            color: #1E1B4B !important;
+            width: 100% !important;
+            transition: all 0.2s ease-in-out !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        /* Focus states */
+        .stTextInput > div > div > input:focus,
+        .stTextArea > div > div > textarea:focus,
+        .stSelectbox > div > div > div:focus {
+            border-color: #1E1B4B !important;
+            box-shadow: 0 0 0 2px rgba(30, 27, 75, 0.1) !important;
+            outline: none !important;
+        }
+
+        /* Placeholder styling */
+        .stTextInput > div > div > input::placeholder,
+        .stTextArea > div > div > textarea::placeholder {
+            color: #9CA3AF !important;
+            opacity: 1 !important;
+        }
+
+        /* Hover states */
+        .stTextInput > div > div > input:hover,
+        .stTextArea > div > div > textarea:hover,
+        .stSelectbox > div > div > div:hover {
+            border-color: #1E1B4B !important;
+            background-color: #FAFAFA !important;
         }
         
         /* Button styles */
@@ -70,11 +104,6 @@ def apply_custom_styles():
             border: 1px solid #E5E7EB !important;
         }
         
-        .highlight-button {
-            background-color: #FFF8E6 !important;
-            border: 1px solid #FFE4A0 !important;
-        }
-        
         /* Fixed footer */
         .footer {
             position: fixed;
@@ -90,48 +119,23 @@ def apply_custom_styles():
             align-items: center;
         }
         
-        /* Chat input container and styling */
-        .chat-container {
-            position: fixed;
-            bottom: 80px;
-            left: 300px;
-            right: 2rem;
-            background-color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            z-index: 99;
-        }
-        
+        /* Chat input styling - Enhanced */
         .chat-input {
             width: calc(100% - 50px);
-            padding: 0.75rem;
-            border: 1px solid #E5E7EB;
+            padding: 0.875rem;
+            border: 2px solid #E5E7EB;
             border-radius: 8px;
             outline: none;
             font-size: 16px;
             margin-right: 10px;
+            background-color: white;
+            color: #1E1B4B;
+            transition: all 0.2s ease-in-out;
         }
         
         .chat-input:focus {
             border-color: #1E1B4B;
             box-shadow: 0 0 0 2px rgba(30, 27, 75, 0.1);
-        }
-        
-        .send-button {
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            color: #1E1B4B;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.2s;
-        }
-        
-        .send-button:hover {
-            color: #2d2a5c;
         }
         
         /* Sidebar navigation */
@@ -161,16 +165,20 @@ def apply_custom_styles():
             .main-content {
                 margin-bottom: 140px;
             }
+            
+            /* Responsive input adjustments */
+            .stTextInput > div > div > input,
+            .stTextArea > div > div > textarea,
+            .stSelectbox > div > div > div {
+                font-size: 16px !important; /* Prevents zoom on mobile */
+                padding: 0.75rem !important;
+            }
         }
         
         /* Custom styling for specific elements */
         .css-1y4p8pa {  /* Sidebar */
             background-color: #F3F1FF;
             border-right: 1px solid #E5E7EB;
-        }
-        
-        .css-1vq4p4l {  /* Main content */
-            padding: 2rem;
         }
         
         /* Hide sidebar when showing welcome screen */
@@ -185,6 +193,17 @@ def apply_custom_styles():
         
         .css-1d391kg {
             background-color: #FFF8E6;
+        }
+
+        /* Error state for inputs */
+        .input-error {
+            border-color: #DC2626 !important;
+        }
+
+        .error-message {
+            color: #DC2626;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
         }
         </style>
     """, unsafe_allow_html=True)
