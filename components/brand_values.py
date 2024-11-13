@@ -8,12 +8,11 @@ def initialize_brand_values_state():
         set_user_state(user_id, "brand_values", {
             'mission': '',
             'values': [],
-            'virtues': [],
             'is_completed': False
         })
 
 def render_brand_values():
-    """Render the brand values and virtues form"""
+    """Render the brand values form"""
     initialize_brand_values_state()
     user_id = get_current_user_id()
     
@@ -43,7 +42,7 @@ def render_brand_values():
             help="Define your company's purpose and goals in a clear, concise statement."
         )
         
-        st.markdown("### What are the virtues and values of your brand?")
+        st.markdown("### What are the core values of your brand?")
         
         # Convert list to string for text input
         current_values = ', '.join(brand_values.get('values', []))
@@ -54,23 +53,14 @@ def render_brand_values():
             height=100
         )
         
-        current_virtues = ', '.join(brand_values.get('virtues', []))
-        virtues = st.text_area(
-            "Brand Virtues",
-            value=current_virtues,
-            help="Enter your brand's virtues and principles, separated by commas",
-            height=100
-        )
-        
         submit_button = st.form_submit_button("Save and Continue")
         
         if submit_button:
-            if mission and values and virtues:
+            if mission and values:
                 # Update session state using session manager
                 brand_values = {
                     'mission': mission,
                     'values': [v.strip() for v in values.split(',') if v.strip()],
-                    'virtues': [v.strip() for v in virtues.split(',') if v.strip()],
                     'is_completed': True
                 }
                 set_user_state(user_id, "brand_values", brand_values)
@@ -119,7 +109,6 @@ def render_brand_values():
         brand_values = {
             'mission': '',
             'values': [],
-            'virtues': [],
             'is_completed': True  # Mark as completed even though skipped
         }
         set_user_state(user_id, "brand_values", brand_values)
