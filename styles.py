@@ -6,179 +6,191 @@ def apply_custom_styles():
         /* Main layout and colors */
         .main {
             background-color: #FFFFFF;
-            padding: 2rem;
+            padding: 0;
         }
         
         /* Sidebar styles */
-        .css-1d391kg {
+        section[data-testid="stSidebar"] {
             background-color: #F3F1FF !important;
+            padding: 2rem 1rem;
         }
         
         /* Sidebar buttons */
-        .sidebar-button {
+        .sidebar-btn {
             background-color: #1E1B4B !important;
             color: white !important;
             width: 100% !important;
-            text-align: left;
-            margin-bottom: 0.5rem;
+            text-align: center !important;
+            margin-bottom: 0.75rem !important;
             border: none !important;
             padding: 0.75rem 1rem !important;
             border-radius: 8px !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease-in-out !important;
+        }
+        
+        .sidebar-btn:hover {
+            opacity: 0.9 !important;
         }
         
         /* Save and Exit button */
-        .save-exit-button {
+        .save-exit-btn {
             background-color: #1E1B4B !important;
             color: white !important;
             border-radius: 8px !important;
-            padding: 0.5rem 1rem !important;
-            float: right;
-            margin: 1rem;
+            padding: 0.75rem 1.5rem !important;
             border: none !important;
+            font-weight: 500 !important;
+            cursor: pointer !important;
+            float: right !important;
+            margin: 1rem !important;
         }
         
         /* Marketing action buttons container */
-        .action-buttons-container {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin: 2rem auto;
-            max-width: 800px;
+        .action-buttons {
+            display: flex !important;
+            justify-content: center !important;
+            gap: 1rem !important;
+            margin: 2rem auto !important;
+            max-width: 800px !important;
+            padding: 0 1rem !important;
         }
         
         /* Generate Content Marketing button */
-        .generate-button {
+        .generate-btn {
             background-color: #FFD700 !important;
             color: #1E1B4B !important;
             border: none !important;
             padding: 0.75rem 1.5rem !important;
             border-radius: 8px !important;
             font-weight: 500 !important;
-            width: auto !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease-in-out !important;
         }
         
         /* Create Marketing Campaign button */
-        .campaign-button {
+        .campaign-btn {
             background-color: white !important;
             color: #1E1B4B !important;
             border: 1px solid #1E1B4B !important;
             padding: 0.75rem 1.5rem !important;
             border-radius: 8px !important;
             font-weight: 500 !important;
-            width: auto !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease-in-out !important;
         }
         
         /* Chat container */
         .chat-container {
-            margin-bottom: 120px;
-            padding: 1rem;
-            height: calc(100vh - 280px);
-            overflow-y: auto;
+            margin-bottom: 120px !important;
+            padding: 1rem !important;
+            height: calc(100vh - 280px) !important;
+            overflow-y: auto !important;
         }
         
-        /* Chat messages */
         .chat-message {
-            padding: 1rem;
-            margin: 0.5rem 0;
-            border-radius: 8px;
-            max-width: 80%;
+            padding: 1rem !important;
+            margin: 0.5rem 0 !important;
+            border-radius: 8px !important;
+            max-width: 80% !important;
         }
         
         .user-message {
-            background-color: #F3F4F6;
-            margin-left: auto;
+            background-color: #F3F4F6 !important;
+            margin-left: auto !important;
         }
         
         .bot-message {
-            background-color: #E5E7EB;
-            margin-right: auto;
+            background-color: #E5E7EB !important;
+            margin-right: auto !important;
         }
         
         /* Chat input area */
         .chat-input-container {
-            position: fixed;
-            bottom: 60px;
-            left: 0;
-            right: 0;
-            padding: 1rem;
-            background-color: white;
-            border-top: 1px solid #E5E7EB;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            z-index: 99;
+            position: fixed !important;
+            bottom: 60px !important;
+            left: 0 !important;
+            right: 0 !important;
+            padding: 1rem !important;
+            background-color: white !important;
+            border-top: 1px solid #E5E7EB !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 1rem !important;
+            z-index: 99 !important;
         }
         
         .chat-input {
-            flex-grow: 1;
-            padding: 0.875rem;
-            border: 2px solid #E5E7EB;
-            border-radius: 8px;
-            outline: none;
-            font-size: 16px;
-            background-color: white;
-            color: #1E1B4B;
+            flex-grow: 1 !important;
+            padding: 0.875rem !important;
+            border: 1px solid #E5E7EB !important;
+            border-radius: 8px !important;
+            outline: none !important;
+            font-size: 16px !important;
         }
         
-        .chat-input:focus {
-            border-color: #1E1B4B;
-            box-shadow: 0 0 0 2px rgba(30, 27, 75, 0.1);
+        .chat-input::placeholder {
+            color: #6B7280 !important;
         }
         
-        /* Send button */
-        .send-button {
+        .send-btn {
             background-color: #1E1B4B !important;
             color: white !important;
             border: none !important;
             border-radius: 8px !important;
-            padding: 0.875rem 1.5rem !important;
-            margin-left: 0.5rem !important;
+            padding: 0.875rem !important;
+            aspect-ratio: 1 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
         }
         
         /* Footer */
         .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: #1E1B4B;
-            color: white;
-            padding: 1rem;
-            z-index: 100;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            background-color: #1E1B4B !important;
+            color: white !important;
+            padding: 1rem !important;
+            z-index: 100 !important;
         }
         
-        /* Footer links and social icons */
         .footer-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            max-width: 1200px !important;
+            margin: 0 auto !important;
+            padding: 0 1rem !important;
         }
         
         .footer-links a {
-            color: white;
-            text-decoration: none;
-            margin: 0 1rem;
+            color: white !important;
+            text-decoration: none !important;
+            margin-right: 2rem !important;
+            font-weight: 500 !important;
         }
         
         .social-icons {
-            display: flex;
-            gap: 1rem;
+            display: flex !important;
+            gap: 1.5rem !important;
         }
         
         .social-icons a {
-            color: white;
-            text-decoration: none;
+            color: white !important;
+            text-decoration: none !important;
+            font-size: 1.25rem !important;
         }
         
         /* Hide Streamlit elements */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
+        #MainMenu {visibility: hidden !important;}
+        footer {visibility: hidden !important;}
         </style>
+        
+        <!-- Add Font Awesome for social media icons -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     """, unsafe_allow_html=True)
