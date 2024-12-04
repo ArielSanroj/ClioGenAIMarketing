@@ -5,106 +5,137 @@ def apply_custom_styles():
         <style>
         /* Main layout and colors */
         .main {
-            background-color: #FFF8E6;
+            background-color: #FFFFFF;
             padding: 2rem;
         }
         
-        /* Centered container */
-        .centered-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-            text-align: center;
+        /* Sidebar styles */
+        .css-1d391kg {
+            background-color: #F3F1FF !important;
         }
         
-        /* Welcome title */
-        .welcome-title {
-            font-size: 3rem;
-            color: #28264D;
-            margin-bottom: 1.5rem;
-            font-weight: bold;
-            text-align: center;
-        }
-        
-        /* Welcome subtitle */
-        .welcome-subtitle {
-            font-size: 1.2rem;
-            color: #4A4867;
-            margin-bottom: 3rem;
-            text-align: center;
-        }
-        
-        /* Form styling - Updated for better visibility */
-        .stTextInput > label, .stTextArea > label, .stSelectbox > label {
-            font-size: 1rem;
-            color: #28264D;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-        
-        /* Enhanced text input styling */
-        .stTextInput > div > div > input, 
-        .stTextArea > div > div > textarea,
-        .stSelectbox > div > div > div {
-            background-color: #FFFFFF !important;
-            border: 2px solid #E5E7EB !important;
-            border-radius: 8px !important;
-            padding: 0.875rem !important;
-            font-size: 1rem !important;
-            color: #1E1B4B !important;
+        /* Sidebar buttons */
+        .sidebar-button {
+            background-color: #1E1B4B !important;
+            color: white !important;
             width: 100% !important;
-            transition: all 0.2s ease-in-out !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-        }
-
-        /* Focus states */
-        .stTextInput > div > div > input:focus,
-        .stTextArea > div > div > textarea:focus,
-        .stSelectbox > div > div > div:focus {
-            border-color: #1E1B4B !important;
-            box-shadow: 0 0 0 2px rgba(30, 27, 75, 0.1) !important;
-            outline: none !important;
-        }
-
-        /* Placeholder styling */
-        .stTextInput > div > div > input::placeholder,
-        .stTextArea > div > div > textarea::placeholder {
-            color: #9CA3AF !important;
-            opacity: 1 !important;
-        }
-
-        /* Hover states */
-        .stTextInput > div > div > input:hover,
-        .stTextArea > div > div > textarea:hover,
-        .stSelectbox > div > div > div:hover {
-            border-color: #1E1B4B !important;
-            background-color: #FAFAFA !important;
+            text-align: left;
+            margin-bottom: 0.5rem;
+            border: none !important;
+            padding: 0.75rem 1rem !important;
+            border-radius: 8px !important;
         }
         
-        /* Button styles */
-        .stButton > button {
-            background-color: #1E1B4B;
-            color: white;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            width: 100%;
-            transition: background-color 0.2s;
+        /* Save and Exit button */
+        .save-exit-button {
+            background-color: #1E1B4B !important;
+            color: white !important;
+            border-radius: 8px !important;
+            padding: 0.5rem 1rem !important;
+            float: right;
+            margin: 1rem;
+            border: none !important;
         }
         
-        .stButton > button:hover {
-            background-color: #2d2a5c;
+        /* Marketing action buttons container */
+        .action-buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem auto;
+            max-width: 800px;
         }
         
-        /* Action buttons */
-        .action-button {
+        /* Generate Content Marketing button */
+        .generate-button {
+            background-color: #FFD700 !important;
+            color: #1E1B4B !important;
+            border: none !important;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 8px !important;
+            font-weight: 500 !important;
+            width: auto !important;
+        }
+        
+        /* Create Marketing Campaign button */
+        .campaign-button {
             background-color: white !important;
             color: #1E1B4B !important;
-            border: 1px solid #E5E7EB !important;
+            border: 1px solid #1E1B4B !important;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 8px !important;
+            font-weight: 500 !important;
+            width: auto !important;
         }
         
-        /* Fixed footer */
+        /* Chat container */
+        .chat-container {
+            margin-bottom: 120px;
+            padding: 1rem;
+            height: calc(100vh - 280px);
+            overflow-y: auto;
+        }
+        
+        /* Chat messages */
+        .chat-message {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        
+        .user-message {
+            background-color: #F3F4F6;
+            margin-left: auto;
+        }
+        
+        .bot-message {
+            background-color: #E5E7EB;
+            margin-right: auto;
+        }
+        
+        /* Chat input area */
+        .chat-input-container {
+            position: fixed;
+            bottom: 60px;
+            left: 0;
+            right: 0;
+            padding: 1rem;
+            background-color: white;
+            border-top: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 99;
+        }
+        
+        .chat-input {
+            flex-grow: 1;
+            padding: 0.875rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            outline: none;
+            font-size: 16px;
+            background-color: white;
+            color: #1E1B4B;
+        }
+        
+        .chat-input:focus {
+            border-color: #1E1B4B;
+            box-shadow: 0 0 0 2px rgba(30, 27, 75, 0.1);
+        }
+        
+        /* Send button */
+        .send-button {
+            background-color: #1E1B4B !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 0.875rem 1.5rem !important;
+            margin-left: 0.5rem !important;
+        }
+        
+        /* Footer */
         .footer {
             position: fixed;
             bottom: 0;
@@ -119,91 +150,35 @@ def apply_custom_styles():
             align-items: center;
         }
         
-        /* Chat input styling - Enhanced */
-        .chat-input {
-            width: calc(100% - 50px);
-            padding: 0.875rem;
-            border: 2px solid #E5E7EB;
-            border-radius: 8px;
-            outline: none;
-            font-size: 16px;
-            margin-right: 10px;
-            background-color: white;
-            color: #1E1B4B;
-            transition: all 0.2s ease-in-out;
+        /* Footer links and social icons */
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
         }
         
-        .chat-input:focus {
-            border-color: #1E1B4B;
-            box-shadow: 0 0 0 2px rgba(30, 27, 75, 0.1);
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 1rem;
         }
         
-        /* Sidebar navigation */
-        .sidebar-nav {
-            padding: 1rem;
+        .social-icons {
+            display: flex;
+            gap: 1rem;
         }
         
-        .sidebar-nav button {
-            text-align: left;
-            margin-bottom: 0.5rem;
+        .social-icons a {
+            color: white;
+            text-decoration: none;
         }
         
-        /* Main content area */
-        .main-content {
-            margin-bottom: 160px;
-            padding: 2rem;
-        }
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .chat-container {
-                left: 1rem;
-                right: 1rem;
-                bottom: 70px;
-            }
-            
-            .main-content {
-                margin-bottom: 140px;
-            }
-            
-            /* Responsive input adjustments */
-            .stTextInput > div > div > input,
-            .stTextArea > div > div > textarea,
-            .stSelectbox > div > div > div {
-                font-size: 16px !important; /* Prevents zoom on mobile */
-                padding: 0.75rem !important;
-            }
-        }
-        
-        /* Custom styling for specific elements */
-        .css-1y4p8pa {  /* Sidebar */
-            background-color: #F3F1FF;
-            border-right: 1px solid #E5E7EB;
-        }
-        
-        /* Hide sidebar when showing welcome screen */
-        .welcome-screen .css-1d391kg {
-            display: none;
-        }
-        
-        /* Streamlit default overrides */
-        .stApp {
-            background-color: #FFF8E6;
-        }
-        
-        .css-1d391kg {
-            background-color: #FFF8E6;
-        }
-
-        /* Error state for inputs */
-        .input-error {
-            border-color: #DC2626 !important;
-        }
-
-        .error-message {
-            color: #DC2626;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
+        /* Hide Streamlit elements */
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
         </style>
     """, unsafe_allow_html=True)
