@@ -1,4 +1,5 @@
 import streamlit as st
+from utils.session_manager import get_user_state, get_current_user_id, set_user_state
 
 def load_custom_css():
     """Load custom CSS for styling the Streamlit app."""
@@ -15,117 +16,108 @@ def load_custom_css():
             background-color: #3e2a5e;
             color: #ffeeb3;
         }
-        .custom-box {
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
+        .chat-interface {
+            margin-bottom: 60px;
+        }
+        .chat-message {
             padding: 1rem;
-            text-align: center;
-            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
-        }
-        .custom-box:hover {
-            border-color: #3e2a5e;
-        }
-        .sidebar {
-            background-color: #f0e6ff;
-            padding: 1rem;
-        }
-        .main-area {
-            background-color: #fffbf0;
-            padding: 2rem;
-        }
-        .footer {
-            text-align: center;
-            font-size: 12px;
-            color: #aaa;
-            padding: 1rem;
-        }
-        .footer a {
-            text-decoration: none;
-            color: #3e2a5e;
-        }
-        .stTextInput input {
+            margin: 0.5rem 0;
             border-radius: 8px;
-            padding: 0.5rem;
-            border: 1px solid #e0e0e0;
+            max-width: 80%;
         }
-        .send-button {
-            background-color: #1f1937;
-            color: white;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            padding: 0.5rem 1rem;
+        .user-message {
+            background-color: #f3f4f6;
+            margin-left: auto;
         }
-        .send-button:hover {
-            background-color: #3e2a5e;
+        .bot-message {
+            background-color: #e5e7eb;
+            margin-right: auto;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .action-button {
+            background-color: #ffeeb3 !important;
+            color: #1f1937 !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-# Main Interface Function
 def render_chat_interface():
     """Render the marketing chat interface."""
     st.set_page_config(layout="wide", page_title="Gen AI Marketing Chat")
-
+    
     # Load custom CSS
     load_custom_css()
-
-    # Layout: Sidebar and Main Area
-    col_sidebar, col_main = st.columns([1, 4])
-
-    # Sidebar
-    with col_sidebar:
+    
+    # Get user state
+    user_id = get_current_user_id()
+    chat_history = get_user_state(user_id, "chat_history", [])
+    
+    # Layout
+    col1, col2, col3 = st.columns([1, 3, 1])
+    
+    with col1:
         st.image("assets/logoclio.png", width=100)
-        st.write("")  # Spacing
         st.button("New Chat", use_container_width=True)
-        st.button("Chats History", use_container_width=True)
-
-    # Main Area
-    with col_main:
-        # Top row for Save and Exit
-        col1, col2 = st.columns([4, 1])
-        with col2:
-            if st.button("Save and Exit", use_container_width=True):
-                st.write("Save and Exit clicked!")
-
-        # Centered Action Buttons
-        st.write("")
-        col_action1, col_action2 = st.columns([1, 1], gap="large")
+        st.button("Chats history", use_container_width=True)
+    
+    with col2:
+        # Top action buttons
+        with st.container():
+            col_exit, = st.columns([1])
+            with col_exit:
+                st.button("Save and Exit", use_container_width=True)
+        
+        # Marketing action buttons
+        st.markdown('<div class="action-buttons">', unsafe_allow_html=True)
+        col_action1, col_action2 = st.columns(2)
         with col_action1:
-            if st.button("Generate Content Marketing", use_container_width=True):
-                st.write("Generate Content Marketing clicked!")
+            if st.button("Generate Content Marketing", key="gen_content", use_container_width=True):
+                set_user_state(user_id, "selected_option", "content")
         with col_action2:
-            if st.button("Create Marketing Campaign", use_container_width=True):
-                st.write("Create Marketing Campaign clicked!")
-
-        # Footer and Input Box
-        st.markdown("---")
-        col_input, col_send = st.columns([4, 1])
-        with col_input:
-            user_input = st.text_input(
-                "Message Clio AI",
-                placeholder="Type your message here...",
-                key="chat_input",
-                label_visibility="collapsed"
+            if st.button("Create Marketing Campaign", key="create_campaign", use_container_width=True):
+                set_user_state(user_id, "selected_option", "campaign")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Chat messages
+        st.markdown('<div class="chat-interface">', unsafe_allow_html=True)
+        for message in chat_history:
+            message_class = "user-message" if message["role"] == "user" else "bot-message"
+            st.markdown(
+                f'<div class="chat-message {message_class}">{message["content"]}</div>',
+                unsafe_allow_html=True
             )
-        with col_send:
-            if st.button("Send", use_container_width=True):
-                if user_input:
-                    st.write(f"User Input: {user_input}")
-                else:
-                    st.error("Please enter a message before sending.")
-
-    # Footer Links
-    st.markdown(
-        """
-        <div class="footer">
-            <a href="#">Contact Us</a> | <a href="#">Privacy Policy</a>
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Input area
+        with st.container():
+            input_col, button_col = st.columns([4, 1])
+            with input_col:
+                user_input = st.text_input(
+                    "Message Clio AI",
+                    key="chat_input",
+                    label_visibility="collapsed"
+                )
+            with button_col:
+                if st.button("Send", use_container_width=True):
+                    if user_input:
+                        # Add user message to chat history
+                        chat_history.append({"role": "user", "content": user_input})
+                        set_user_state(user_id, "chat_history", chat_history)
+                        # Clear input (will be implemented through session state)
+                        st.session_state.chat_input = ""
+    
+    # Footer
+    st.markdown("""
+        <div style="position: fixed; bottom: 0; left: 0; right: 0; background-color: #1f1937; padding: 1rem; text-align: center;">
+            <a href="#" style="color: white; text-decoration: none; margin: 0 1rem;">Contact Us</a>
+            <a href="#" style="color: white; text-decoration: none; margin: 0 1rem;">Privacy Policy</a>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """, unsafe_allow_html=True)
 
-# Run the app
 if __name__ == "__main__":
-    render_interface()
+    render_chat_interface()

@@ -5,7 +5,7 @@ from langdetect import detect
 from ai_utils import analyze_webpage
 from urllib.parse import urlparse
 import langdetect
-from components.chat_interface import render_chat_interface
+# Removed circular import
 
 # Initialize Session State
 def initialize_session_state():
