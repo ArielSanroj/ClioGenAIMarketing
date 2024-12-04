@@ -7,6 +7,97 @@ import html
 import asyncio
 from typing import Dict, Optional, Any
 
+# Define archetype behaviors with detailed attributes
+archetype_behaviors = {
+    'autonomous': {
+        'platforms': ['LinkedIn', 'Twitter', 'Medium'],
+        'content_focus': 'Efficiency, performance, and professional growth',
+        'preferred_tone': 'Professional and data-driven',
+        'engagement_time': '8am-11am'
+    },
+    'impulsive': {
+        'platforms': ['Instagram', 'TikTok', 'Facebook'],
+        'content_focus': 'Urgency, excitement, and instant gratification',
+        'preferred_tone': 'Dynamic and engaging',
+        'engagement_time': '7pm-10pm'
+    },
+    'avoidant': {
+        'platforms': ['YouTube', 'Pinterest', 'Instagram'],
+        'content_focus': 'Relaxation, simplicity, and emotional connection',
+        'preferred_tone': 'Gentle and reassuring',
+        'engagement_time': '6pm-9pm'
+    },
+    'isolated': {
+        'platforms': ['Email', 'LinkedIn', 'Reddit'],
+        'content_focus': 'Privacy, autonomy, and introspection',
+        'preferred_tone': 'Respectful and private',
+        'engagement_time': '9am-12pm'
+    }
+}
+
+# Define platform-specific recommendations with details
+platform_recommendations = {
+    'LinkedIn': {
+        'best_for': 'Professional audiences and B2B marketing',
+        'content_tips': 'Share case studies, ROI-focused reports, and industry insights.',
+        'engagement_tips': 'Post during weekdays, especially mornings.'
+    },
+    'Twitter': {
+        'best_for': 'Real-time updates and thought leadership',
+        'content_tips': 'Use concise, impactful posts with trending hashtags.',
+        'engagement_tips': 'Engage in conversations and share breaking news.'
+    },
+    'Medium': {
+        'best_for': 'Long-form content and storytelling',
+        'content_tips': 'Publish in-depth articles and thought pieces.',
+        'engagement_tips': 'Focus on niche topics and use strategic tagging.'
+    },
+    'Instagram': {
+        'best_for': 'Visual storytelling and brand awareness',
+        'content_tips': 'Leverage vibrant visuals, stories, and short videos.',
+        'engagement_tips': 'Use interactive features like polls and reels.'
+    },
+    'TikTok': {
+        'best_for': 'Short, engaging video content for younger audiences',
+        'content_tips': 'Create trends, challenges, and entertaining clips.',
+        'engagement_tips': 'Post frequently and follow platform trends.'
+    },
+    'Facebook': {
+        'best_for': 'Community building and wide audience reach',
+        'content_tips': 'Share relatable stories, events, and group-driven content.',
+        'engagement_tips': 'Focus on visuals and short captions.'
+    },
+    'YouTube': {
+        'best_for': 'Longer video content and tutorials',
+        'content_tips': 'Create explainer videos, behind-the-scenes, and educational content.',
+        'engagement_tips': 'Post consistently and use attention-grabbing thumbnails.'
+    },
+    'Pinterest': {
+        'best_for': 'Inspirational and lifestyle-focused content',
+        'content_tips': 'Share visually appealing pins with actionable ideas.',
+        'engagement_tips': 'Focus on keywords and seasonal trends.'
+    },
+    'Email': {
+        'best_for': 'Direct and personalized communication',
+        'content_tips': 'Use clear CTAs and segmented campaigns for personalization.',
+        'engagement_tips': 'Send during mid-week mornings for higher open rates.'
+    },
+    'Reddit': {
+        'best_for': 'Niche communities and in-depth discussions',
+        'content_tips': 'Participate in relevant subreddits and offer value-driven content.',
+        'engagement_tips': 'Engage genuinely and avoid overt promotion.'
+    }
+}
+
+
+# Archetype-specific content templates
+TEMPLATES = {
+    'autonomous': "Highlight efficiency and results with data-driven visuals.",
+    'impulsive': "Focus on urgency with dynamic calls-to-action.",
+    'avoidant': "Emphasize comfort and simplicity with reassuring messages.",
+    'isolated': "Promote independence and control with private solutions."
+}
+
 def generate_content_for_all_archetypes(story: str, content_type: str, platform: str, tone: str) -> Dict[str, Any]:
     """Generate content for all archetypes simultaneously"""
     archetypes = {
@@ -36,19 +127,27 @@ def generate_content_for_all_archetypes(story: str, content_type: str, platform:
     
     for archetype, traits in archetypes.items():
         try:
+
+            for platform in archetype_behaviors[archetype]['platforms']:
+                recommended_content = platform_recommendations[platform]
+                
+            # Retrieve template for the archetype
+            template = TEMPLATES.get(archetype, "No specific template available.")
+
             # Create prompt for this archetype
             prompt = f"""
             Story: {story}
             Content Type: {content_type}
             Platform: {platform}
             Base Tone: {tone}
-            
+
             Archetype: {archetype}
             Archetype Tone: {traits['tone']}
             Content Focus: {traits['focus']}
             Writing Style: {traits['style']}
+            Template Guidance: {template}
             """
-            
+
             # Generate content with proper error handling
             try:
                 content = generate_marketing_content(prompt, content_type)
@@ -60,7 +159,7 @@ def generate_content_for_all_archetypes(story: str, content_type: str, platform:
                     'keywords': [],
                     'target_audience': ''
                 }
-            
+
             # Get emotional profile with proper error handling
             try:
                 emotional_profile = st.session_state.emotion_engine.analyze_emotional_context(
@@ -68,7 +167,7 @@ def generate_content_for_all_archetypes(story: str, content_type: str, platform:
                     brand_values=getattr(st.session_state, 'brand_values', {}),
                     audience_data={'archetype': archetype}
                 )
-                
+
                 if emotional_profile:
                     content['emotional_profile'] = {
                         'primary_emotion': emotional_profile.primary_emotion,
@@ -81,16 +180,16 @@ def generate_content_for_all_archetypes(story: str, content_type: str, platform:
                     'intensity': 0.5,
                     'triggers': []
                 }
-            
+
             results[archetype] = content
-            
+
         except Exception as e:
             results[archetype] = {
                 'error': f"Error processing {archetype}: {str(e)}",
                 'content': None,
                 'emotional_profile': None
             }
-    
+
     return results
 
 def initialize_session_state():
@@ -255,7 +354,7 @@ def render_content_generator():
     # Header with logo and go back button
     st.markdown("""
         <div class="header-container">
-            <img src="logoclio.png" alt="Logo" class="logo">
+            <img src="assets/logoclio.png" alt="Logo" class="logo">
             <a href="#" class="go-back-btn">Go back</a>
         </div>
     """, unsafe_allow_html=True)

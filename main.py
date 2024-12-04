@@ -4,114 +4,156 @@ from components.content_generator import render_content_generator
 from components.social_media import render_social_media_campaign
 from components.seo_analyzer import render_seo_analyzer
 from components.brand_values import render_brand_values
-from components.icp_definition import render_icp_definition
 from components.consumer_archetypes import render_consumer_archetypes
 from styles import apply_custom_styles
 from auth import is_authenticated
 from auth_pages import render_auth_pages
 from utils.session_manager import get_user_state, get_current_user_id, set_user_state
+from plotly import express as px
+from components.icp_definition import render_icp_questionnaire
+from components.chat_interface import render_chat_interface
+
+
+def initialize_state(user_id):
+    """Initialize default states for all components."""
+    default_states = {
+        "brand_values": {"is_completed": False},
+        "icp_data": {"is_completed": False},
+        "seo_analyzer": {"is_completed": False},
+        "content_generator": {"is_completed": False},
+    }
+    for key, default in default_states.items():
+        if not get_user_state(user_id, key):
+            set_user_state(user_id, key, default)
+
+
+def next_incomplete_stage(user_id):
+    """Determine the next incomplete stage in the user flow."""
+    stages = ["brand_values", "icp_data", "seo_analyzer", "content_generator"]
+    for stage in stages:
+        if not get_user_state(user_id, stage).get('is_completed', False):
+            return stage
+    return None
+
 
 def render_dashboard():
-    """Render the home chat interface"""
+    """Render the home dashboard with metrics and insights."""
     user_id = get_current_user_id()
-    
-    # Apply styles for centered layout
-    st.markdown('<div class="centered-container">', unsafe_allow_html=True)
-    
-    # Show logo
-    st.image("logoclio.png", width=100)
-    
-    # Add the two action buttons in a centered layout
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Generate Content Marketing"):
-            set_user_state(user_id, "selected_option", "content")
-            st.rerun()
-    with col2:
-        if st.button("Create Social Media Campaign"):
-            set_user_state(user_id, "selected_option", "social")
-            st.rerun()
-    
-    # Add chat input at the bottom
-    st.markdown('''
-        <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 80%; max-width: 800px;">
-            <div style="background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <input type="text" placeholder="Message Clio AI" style="width: 100%; padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 8px;">
-            </div>
-        </div>
-    ''', unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
-def render_icp_summary():
-    """Render the ICP summary view"""
-    user_id = get_current_user_id()
-    icp_data = get_user_state(user_id, "icp_data")
-    
-    st.markdown("### Your ICP Profile")
-    st.markdown(f"**Knowledge Level:** {icp_data['knowledge_level']}")
-    
-    st.markdown("**Your Answers:**")
-    for q_num in range(1, 6):
-        answer = icp_data['answers'].get(f"q{q_num}", "Not answered")
-        st.markdown(f"**Question {q_num}**")
-        if isinstance(answer, list):
-            for item in answer:
-                st.markdown(f"- {item}")
-        else:
-            st.markdown(f"{answer}")
+    st.markdown("## Marketing Dashboard")
+
+    # Example Metrics
+    alignment_data = {
+        'Archetype': ['Autonomous', 'Impulsive', 'Avoidant', 'Isolated'],
+        'Alignment Score': [85, 70, 60, 90]  # Example scores
+    }
+    fig_alignment = px.bar(
+        alignment_data,
+        x='Archetype',
+        y='Alignment Score',
+        title='Archetype-Brand Alignment',
+        color='Archetype',
+        text='Alignment Score'
+    )
+    fig_alignment.update_layout(xaxis_title="Archetype", yaxis_title="Alignment Score")
+    st.plotly_chart(fig_alignment)
+
+    st.markdown("### Campaign Performance by Archetype")
+    campaign_data = {
+        'Archetype': ['Autonomous', 'Impulsive', 'Avoidant', 'Isolated'],
+        'CTR': [8.5, 5.2, 3.9, 7.8],  # Click-through rates
+        'Conversions': [120, 80, 50, 100]
+    }
+    fig_campaign = px.scatter(
+        campaign_data,
+        x='CTR',
+        y='Conversions',
+        size='Conversions',
+        color='Archetype',
+        hover_name='Archetype',
+        title='Campaign Performance by Archetype'
+    )
+    fig_campaign.update_layout(xaxis_title="Click-Through Rate (%)", yaxis_title="Conversions")
+    st.plotly_chart(fig_campaign)
+
+    st.markdown("### Engagement Trends by Time and Platform")
+    trend_data = pd.DataFrame({
+        'Time': ['8am', '10am', '12pm', '2pm', '4pm', '6pm'],
+        'LinkedIn': [120, 140, 130, 150, 160, 170],
+        'Instagram': [200, 230, 210, 250, 270, 300],
+    })
+    fig_trends = px.line(
+        trend_data,
+        x='Time',
+        y=['LinkedIn', 'Instagram'],
+        title='Engagement Trends by Time and Platform',
+        labels={'value': 'Engagement', 'variable': 'Platform'}
+    )
+    fig_trends.update_layout(xaxis_title="Time", yaxis_title="Engagement")
+    st.plotly_chart(fig_trends)
+
 
 def main():
     st.set_page_config(
         page_title="AI Marketing Assistant",
-        page_icon="assets/logo.svg",
+        page_icon="assets/logoclio.png",
         layout="wide",
         initial_sidebar_state="expanded"
     )
-    
+
     # Apply custom styles
     apply_custom_styles()
-    
+
     # Check authentication
     if not is_authenticated():
         render_auth_pages()
         return
-    
+
     user_id = get_current_user_id()
-    
-    # Main flow condition
-    if not get_user_state(user_id, "brand_values").get('is_completed', False):
-        st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
-        render_brand_values()
-        st.markdown('</div>', unsafe_allow_html=True)
-    elif not get_user_state(user_id, "icp_data").get('is_completed', False):
-        st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
-        render_icp_definition()
-        st.markdown('</div>', unsafe_allow_html=True)
-    else:
-        # Render sidebar and get selected option
-        selected_option = render_sidebar()
-        
-        # Handle navigation from sidebar
-        if selected_option:
-            set_user_state(user_id, "selected_option", selected_option)
-        
-        # Main content area
-        current_option = get_user_state(user_id, "selected_option")
-        if current_option == "home":
-            render_dashboard()
-        elif current_option == "content":
-            render_content_generator()
-        elif current_option == "social":
-            render_social_media_campaign()
-        elif current_option == "market_analysis":
+    initialize_state(user_id)
+
+    try:
+        # Determine the next stage in the onboarding process
+        next_stage = next_incomplete_stage(user_id)
+        if next_stage == "brand_values":
+            st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
+            render_brand_values()
+            st.markdown('</div>', unsafe_allow_html=True)
+        elif next_stage == "icp_data":
+            st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
+            render_icp_questionnaire()
+            st.markdown('</div>', unsafe_allow_html=True)
+        elif next_stage == "seo_analyzer":
+            st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
             render_seo_analyzer()
-        elif current_option == "archetypes":
-            render_consumer_archetypes()
-        elif current_option == "icp_questionnaire":
-            render_icp_definition()
-        elif current_option == "icp_summary":
-            render_icp_summary()
+            st.markdown('</div>', unsafe_allow_html=True)
+        elif next_stage == "content_generator":
+            st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
+            render_content_generator()
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            # Render sidebar and dashboard if all stages are completed
+            selected_option = render_sidebar()
+            current_option = get_user_state(user_id, "selected_option")
+            if selected_option:
+                set_user_state(user_id, "selected_option", selected_option)
+
+            if current_option == "home":
+                render_dashboard()
+            elif current_option == "content":
+                render_content_generator()
+            elif current_option == "social":
+                render_social_media_campaign()
+            elif current_option == "market_analysis":
+                render_seo_analyzer()
+            elif current_option == "archetypes":
+                render_consumer_archetypes()
+            elif current_option == "icp_questionnaire":
+                render_icp_questionnaire()
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
+        st.write("Please refresh the page or contact support.")
+
 
 if __name__ == "__main__":
     main()

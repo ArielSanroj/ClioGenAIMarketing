@@ -50,10 +50,10 @@ def initialize_user_session(user_id: str):
     if f'{prefix}current_chat_id' not in st.session_state:
         st.session_state[f'{prefix}current_chat_id'] = None
 
-def get_user_state(user_id: str, key: str) -> Any:
+def get_user_state(user_id: str, key: str, default: Any = None) -> Any:
     """Get user-specific session state value"""
     prefix = f"user_{user_id}_"
-    return st.session_state.get(f'{prefix}{key}')
+    return st.session_state.get(f'{prefix}{key}', default)
 
 def set_user_state(user_id: str, key: str, value: Any):
     """Set user-specific session state value"""

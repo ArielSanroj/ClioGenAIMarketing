@@ -48,7 +48,7 @@ def render_sidebar():
             </style>
         """, unsafe_allow_html=True)
         
-        st.image("logoclio.png", width=100)
+        st.image("assets/logoclio.png", width=100)
         
         st.markdown("### Navigation")
         

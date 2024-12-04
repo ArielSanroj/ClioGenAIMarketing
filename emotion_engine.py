@@ -133,6 +133,16 @@ class EmotionEngine:
         
         return combined_triggers[:5]  # Return top 5 most relevant triggers
 
+    def calculate_archetype_alignment(self, brand_values: dict) -> Dict[str, float]:
+        alignment_scores = {}
+        for archetype, triggers in self.trigger_mappings.items():
+            matching_keywords = [
+                keyword for keyword in brand_values.get('keywords', []) if keyword in triggers
+            ]
+            alignment_scores[archetype] = len(matching_keywords) / len(triggers)
+        return alignment_scores
+
+
     def _get_content_tone(self, archetype: str, brand_values: dict) -> Dict[str, float]:
         """Get content tone mapping based on archetype and brand values"""
         base_tone = self.tone_mappings.get(archetype.lower(), {})

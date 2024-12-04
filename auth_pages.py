@@ -50,7 +50,7 @@ def render_login_page():
         </style>
     """, unsafe_allow_html=True)
     
-    st.image("logoclio.png", width=100)
+    st.image("assets/logoclio.png", width=100)
     st.markdown("<h1 style='text-align: center;'>Welcome to Clio AI</h1>", unsafe_allow_html=True)
     
     with st.form("login_form"):
@@ -82,7 +82,7 @@ def render_login_page():
 
 def render_registration_page():
     """Render the registration page"""
-    st.image("logoclio.png", width=100)
+    st.image("assets/logoclio.png", width=100)
     st.markdown("<h1 style='text-align: center;'>Create Account</h1>", unsafe_allow_html=True)
     
     with st.form("registration_form"):

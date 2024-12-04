@@ -1,127 +1,205 @@
 import streamlit as st
-from utils.session_manager import get_user_state, set_user_state, get_current_user_id
+import plotly.express as px
+from emotion_engine import EmotionEngine
+from utils.session_manager import get_user_state, set_user_state
+from typing import Dict, List
 
-def initialize_brand_values_state():
-    """Initialize brand values session state"""
-    user_id = get_current_user_id()
-    if user_id and not get_user_state(user_id, "brand_values"):
-        set_user_state(user_id, "brand_values", {
-            'mission': '',
-            'values': [],
-            'is_completed': False
+# Initialize EmotionEngine
+emotion_engine = EmotionEngine()
+
+# Get brand values from user input
+def get_brand_values() -> dict:
+    """Capture brand values from the user using Streamlit widgets."""
+    try:
+        st.sidebar.header("Define Your Brand Values")
+        keywords = st.sidebar.multiselect(
+            "Select Keywords That Represent Your Brand",
+            options=[
+                'efficiency', 'growth', 'trust', 'innovation', 'creativity',
+                'comfort', 'security', 'authenticity', 'mastery', 'balance'
+            ],
+            default=['efficiency', 'growth']
+        )
+        tone = st.sidebar.slider(
+            "Rate Your Brand's Tone (Professional to Casual)",
+            0.0, 1.0, 0.7
+        )
+        return {'keywords': keywords, 'tone': {'professional': tone}}
+    except Exception as e:
+        st.error(f"Error capturing brand values: {e}")
+        return {}
+
+# Calculate archetype compatibility based on brand values
+def calculate_compatibility(brand_values: dict) -> Dict[str, float]:
+    """Calculate compatibility scores between brand values and archetypes."""
+    try:
+        return emotion_engine.calculate_archetype_alignment(brand_values)
+    except Exception as e:
+        st.error(f"Error calculating compatibility: {e}")
+        return {}
+
+# Plot compatibility scores as a bar chart
+def plot_compatibility_chart(compatibility_scores: dict):
+    """Plot a bar chart showing compatibility scores for archetypes."""
+    try:
+        df = px.data.frame({
+            "Archetype": list(compatibility_scores.keys()),
+            "Score": list(compatibility_scores.values())
         })
+        fig = px.bar(
+            df,
+            x="Archetype",
+            y="Score",
+            title="Archetype Compatibility with Brand Values",
+            labels={"Score": "Compatibility Score", "Archetype": "Archetype"},
+            color="Score",
+            color_continuous_scale="Blues",
+            text="Score"
+        )
+        fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+        fig.update_layout(
+            xaxis_title="Archetype",
+            yaxis_title="Compatibility Score",
+            uniformtext_minsize=8,
+            uniformtext_mode='hide'
+        )
+        st.plotly_chart(fig)
+    except Exception as e:
+        st.error(f"Error plotting compatibility chart: {e}")
+
+# Show top archetypes and provide recommendations
+def show_top_archetypes(compatibility_scores: dict):
+    """Display the top recommended archetypes based on compatibility scores."""
+    try:
+        sorted_scores = sorted(compatibility_scores.items(), key=lambda x: x[1], reverse=True)
+        st.subheader("Top Recommended Archetypes")
+        for archetype, score in sorted_scores[:2]:
+            st.markdown(f"**{archetype.capitalize()}**: {score:.2f}")
+            st.write(f"This archetype aligns well with your brand values. "
+                     f"Consider focusing on marketing strategies targeting this archetype.")
+    except Exception as e:
+        st.error(f"Error displaying top archetypes: {e}")
+
+# Display recommendations for aligning brand values with archetypes
+def show_brand_recommendations(compatibility_scores: dict, brand_values: dict):
+    """Provide actionable recommendations for improving alignment with archetypes."""
+    try:
+        st.subheader("Brand Alignment Recommendations")
+        for archetype, score in compatibility_scores.items():
+            if score > 0.5:
+                st.markdown(f"**{archetype.capitalize()}**: {score:.2f}")
+                st.write(f"To improve alignment with the {archetype.capitalize()} archetype, focus on incorporating "
+                         f"keywords like {', '.join(emotion_engine.trigger_mappings[archetype][:3])} into your branding.")
+    except Exception as e:
+        st.error(f"Error generating recommendations: {e}")
+
+def validate_brand_values(values: Dict) -> bool:
+    """Validate the brand values input."""
+    required_fields = ['mission', 'vision', 'values', 'tone']
+    return all(values.get(field) for field in required_fields)
 
 def render_brand_values():
-    """Render the brand values form"""
-    initialize_brand_values_state()
-    user_id = get_current_user_id()
-    
-    if not user_id:
-        st.error("User ID not found. Please log in again.")
-        return
-    
-    # Add centered container
-    st.markdown('<div class="centered-container">', unsafe_allow_html=True)
-    
-    # Logo
-    st.image("logoclio.png", width=100)
-    
-    # Welcome message
-    st.markdown('<h1 class="welcome-title">Welcome to Clio</h1>', unsafe_allow_html=True)
-    st.markdown(
-        '<p class="welcome-subtitle">Please tell us about your company to personalize your experience</p>',
-        unsafe_allow_html=True
-    )
-    
-    with st.form(key='brand_values_form', clear_on_submit=False):
-        brand_values = get_user_state(user_id, "brand_values") or {}
+    """Render the brand values definition component."""
+    st.markdown("## Define Your Brand Values")
+    st.markdown("Let's start by understanding your brand's core values and personality.")
+
+    # Get current user ID and state
+    user_id = st.session_state.get('user_id')
+    brand_values = get_user_state(user_id, "brand_values", {})
+
+    with st.form("brand_values_form"):
+        # Mission Statement
         mission = st.text_area(
-            "What is your company's mission?",
+            "What is your brand's mission?",
             value=brand_values.get('mission', ''),
-            height=100,
-            help="Define your company's purpose and goals in a clear, concise statement."
+            help="Define your brand's purpose and goals"
         )
-        
-        st.markdown("### What are the core values of your brand?")
-        
-        # Convert list to string for text input
-        current_values = ', '.join(brand_values.get('values', []))
+
+        # Vision Statement
+        vision = st.text_area(
+            "What is your brand's vision?",
+            value=brand_values.get('vision', ''),
+            help="Describe your brand's aspirational future"
+        )
+
+        # Core Values
         values = st.text_area(
-            "Core Values",
-            value=current_values,
-            help="Enter your brand's core values, separated by commas (e.g., Innovation, Integrity, Excellence)",
-            height=100
+            "What are your core brand values?",
+            value=brand_values.get('values', ''),
+            help="List your brand's fundamental beliefs and principles"
         )
-        
-        submit_button = st.form_submit_button("Save and Continue")
-        
-        if submit_button:
-            if mission and values:
-                # Update session state using session manager
-                brand_values = {
-                    'mission': mission,
-                    'values': [v.strip() for v in values.split(',') if v.strip()],
-                    'is_completed': True
-                }
-                set_user_state(user_id, "brand_values", brand_values)
-                
-                # Initialize ICP state and set selected_option to icp_questionnaire
-                set_user_state(user_id, "icp_data", {
-                    'knowledge_level': '',
-                    'current_question': 1,
-                    'answers': {},
-                    'is_completed': False
-                })
-                set_user_state(user_id, "selected_option", "icp_questionnaire")
+
+        # Brand Voice/Tone
+        tone_options = [
+            "Professional", "Friendly", "Casual", "Authoritative",
+            "Empathetic", "Innovative", "Traditional", "Playful"
+        ]
+        tone = st.multiselect(
+            "Select your brand's tone of voice",
+            options=tone_options,
+            default=brand_values.get('tone', []),
+            help="Choose the tone that best represents your brand's communication style"
+        )
+
+        # Target Keywords
+        keywords = st.text_area(
+            "Enter target keywords (one per line)",
+            value=brand_values.get('keywords', ''),
+            help="Keywords that represent your brand and offerings"
+        )
+
+        # Form submission
+        submitted = st.form_submit_button("Continue")
+        if submitted:
+            # Process and validate form data
+            new_values = {
+                'mission': mission,
+                'vision': vision,
+                'values': values,
+                'tone': tone,
+                'keywords': [k.strip() for k in keywords.split('\n') if k.strip()],
+                'is_completed': True
+            }
+
+            if validate_brand_values(new_values):
+                # Save to session state
+                set_user_state(user_id, "brand_values", new_values)
                 st.success("Brand values saved successfully!")
                 st.rerun()
             else:
-                st.error("Please fill in all fields before proceeding.")
-    
-    # Add skip button after the form with consistent styling
-    st.markdown("""
-        <style>
-        .skip-button-container {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 1rem;
-        }
-        .skip-button {
-            background-color: transparent;
-            color: #1E1B4B;
-            border: 1px solid #1E1B4B;
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .skip-button:hover {
-            background-color: #F3F4F6;
-            transform: translateY(-1px);
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    st.markdown('<div class="skip-button-container">', unsafe_allow_html=True)
-    if st.button("Skip", type="secondary", key="skip_button"):
-        # Update session state to skip brand values and move to ICP
-        brand_values = {
-            'mission': '',
-            'values': [],
-            'is_completed': True  # Mark as completed even though skipped
-        }
-        set_user_state(user_id, "brand_values", brand_values)
-        
-        # Initialize ICP state and set selected_option to icp_questionnaire
-        set_user_state(user_id, "icp_data", {
-            'knowledge_level': '',
-            'current_question': 1,
-            'answers': {},
-            'is_completed': False
-        })
-        set_user_state(user_id, "selected_option", "icp_questionnaire")
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+                st.error("Please fill in all required fields")
+
+    # Skip button outside the form
+    col1, col2 = st.columns([5, 1])
+    with col2:
+        if st.button("Skip"):
+            set_user_state(user_id, "brand_values", {'is_completed': True})
+            st.rerun()
+
+# Main function
+def main():
+    """Main function to run the Streamlit application."""
+    try:
+        st.title("Brand-Archetype Compatibility Analyzer")
+        st.write("Analyze how your brand values align with different consumer archetypes and get actionable insights.")
+
+        # Step 1: Get brand values from the user
+        brand_values = get_brand_values()
+
+        # Step 2: Calculate archetype compatibility
+        compatibility_scores = calculate_compatibility(brand_values)
+
+        # Step 3: Visualize compatibility scores
+        if compatibility_scores:
+            plot_compatibility_chart(compatibility_scores)
+
+            # Step 4: Show top archetypes and recommendations
+            show_top_archetypes(compatibility_scores)
+            show_brand_recommendations(compatibility_scores, brand_values)
+        else:
+            st.write("No compatibility data available. Please define your brand values in the sidebar.")
+    except Exception as e:
+        st.error(f"Error running the application: {e}")
+
+if __name__ == "__main__":
+    main()
