@@ -2,43 +2,43 @@ import streamlit as st
 from utils.session_manager import get_user_state, get_current_user_id, set_user_state
 
 def render_chat_interface():
-    """Render the marketing chat interface."""
+    """Render the marketing chat interface with the exact design implementation."""
     user_id = get_current_user_id()
     chat_history = get_user_state(user_id, "chat_history", [])
 
     # Save and Exit button
     st.markdown(
-        '<button class="save-exit-btn" onclick="window.location.href=\'/\'">Save and Exit</button>',
+        '<button class="save-exit-btn">Save and Exit</button>',
         unsafe_allow_html=True
     )
 
-    # Sidebar
+    # Sidebar content
     with st.sidebar:
-        # Logo
+        # Logo at top
         st.image("assets/logoclio.png", width=100)
         
         # Navigation buttons
         st.markdown('<div style="margin-top: 2rem;">', unsafe_allow_html=True)
-        if st.button("New Chat", key="new_chat", help="Start a new chat", use_container_width=True,
-                    type="secondary", args=({'className': 'sidebar-btn'},)):
+        if st.button("New Chat", key="new_chat", use_container_width=True):
             set_user_state(user_id, "chat_history", [])
             st.rerun()
-            
-        if st.button("Chats history", key="chat_history", help="View previous chats", use_container_width=True,
-                    type="secondary", args=({'className': 'sidebar-btn'},)):
-            # Handle chat history navigation
+        
+        if st.button("Chats history", key="chats_history", use_container_width=True):
+            # Handle chats history
             pass
 
     # Marketing action buttons
     st.markdown(
-        '<div class="action-buttons">'
-        '<button class="generate-btn" onclick="handleGenerateContent()">Generate Content Marketing</button>'
-        '<button class="campaign-btn" onclick="handleCreateCampaign()">Create Marketing Campaign</button>'
-        '</div>',
+        """
+        <div class="action-buttons">
+            <button class="generate-btn">Generate Content Marketing</button>
+            <button class="campaign-btn">Create Marketing Campaign</button>
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
-    # Chat messages container
+    # Chat container
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     for message in chat_history:
         message_class = "user-message" if message["role"] == "user" else "bot-message"
@@ -48,50 +48,72 @@ def render_chat_interface():
         )
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Chat input and send button
+    # Chat input
     st.markdown(
-        '<div class="chat-input-container">'
-        '<input type="text" class="chat-input" placeholder="Message Clio AI">'
-        '<button class="send-btn"><i class="fas fa-paper-plane"></i></button>'
-        '</div>',
+        """
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" placeholder="Message Clio AI">
+            <button class="send-button">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
-    # Footer
+    # Footer with social icons
     st.markdown(
-        '<div class="footer">'
-        '<div class="footer-content">'
-        '<div class="footer-links">'
-        '<a href="/contact">Contact Us</a>'
-        '<a href="/privacy">Privacy Policy</a>'
-        '</div>'
-        '<div class="social-icons">'
-        '<a href="#" target="_blank"><i class="fab fa-facebook"></i></a>'
-        '<a href="#" target="_blank"><i class="fab fa-instagram"></i></a>'
-        '<a href="#" target="_blank"><i class="fab fa-youtube"></i></a>'
-        '<a href="#" target="_blank"><i class="fab fa-twitter"></i></a>'
-        '<a href="#" target="_blank"><i class="fab fa-whatsapp"></i></a>'
-        '<a href="#" target="_blank"><i class="fab fa-linkedin"></i></a>'
-        '</div>'
-        '</div>'
-        '</div>',
+        """
+        <div class="footer">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="#">Contact Us</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
-    # Add JavaScript for button handlers
-    st.markdown("""
+    # Add JavaScript for handling button clicks
+    st.markdown(
+        """
         <script>
-        function handleGenerateContent() {
-            // Handle Generate Content Marketing button click
-            console.log('Generate Content Marketing clicked');
-        }
+            document.querySelectorAll('.generate-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Handle generate content click
+                    console.log('Generate Content clicked');
+                });
+            });
 
-        function handleCreateCampaign() {
-            // Handle Create Marketing Campaign button click
-            console.log('Create Marketing Campaign clicked');
-        }
+            document.querySelectorAll('.campaign-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Handle create campaign click
+                    console.log('Create Campaign clicked');
+                });
+            });
+
+            document.querySelector('.send-button').addEventListener('click', () => {
+                const input = document.querySelector('.chat-input');
+                if (input.value.trim()) {
+                    // Handle send message
+                    console.log('Message:', input.value);
+                    input.value = '';
+                }
+            });
         </script>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True
+    )
 
 if __name__ == "__main__":
     render_chat_interface()
