@@ -52,7 +52,14 @@ def get_question(question_number: int) -> dict:
 def calculate_archetype_probabilities(answers: dict) -> dict:
     """Calculate archetype probabilities based on user answers."""
     try:
-        return emotion_engine.calculate_archetype_alignment(answers)
+        # Example of mapping answers to archetype scores
+        archetype_scores = {key: 0 for key in emotion_engine.trigger_mappings.keys()}
+        if "Technology" in answers.get("q2", []):
+            archetype_scores['autonomous'] += 1
+        if "$50,000+" in answers.get("q3", ""):
+            archetype_scores['impulsive'] += 1
+
+        return emotion_engine.calculate_archetype_alignment(archetype_scores)
     except Exception as e:
         st.error(f"Error calculating archetype probabilities: {e}")
         return {}
@@ -60,13 +67,36 @@ def calculate_archetype_probabilities(answers: dict) -> dict:
 def generate_recommendations(archetype_probabilities: dict):
     """Generate keyword and marketing recommendations based on archetypes."""
     st.subheader("Archetype Insights and Recommendations")
+
+    if not archetype_probabilities:
+        st.warning("No archetype alignment detected. Consider revisiting the ICP questionnaire or refining your inputs.")
+        return
+
     for archetype, probability in sorted(archetype_probabilities.items(), key=lambda x: x[1], reverse=True):
         st.markdown(f"### {archetype.capitalize()} Archetype")
         st.write(f"**Probability:** {probability:.2f}")
+
+        # Display relevant keywords
         keywords = emotion_engine.trigger_mappings.get(archetype, [])
         if keywords:
             st.markdown(f"**Recommended Keywords:** {', '.join(keywords[:5])}")
-        st.write(f"**Marketing Strategy:** Focus on creating campaigns that resonate with {archetype.capitalize()} values.")
+
+        # Provide richer marketing strategies
+        if archetype == "autonomous":
+            st.write("**Marketing Strategy:** Focus on data-driven content, like case studies or white papers, "
+                     "to appeal to logical and achievement-oriented thinkers.")
+        elif archetype == "impulsive":
+            st.write("**Marketing Strategy:** Leverage urgency-based CTAs like 'Limited Offer' or 'Act Now', "
+                     "and emphasize exciting and visually engaging content.")
+        elif archetype == "isolative":
+            st.write("**Marketing Strategy:** Highlight privacy, comfort, and authenticity in your messaging. "
+                     "Use reassuring tones to establish trust.")
+        elif archetype == "avoidant":
+            st.write("**Marketing Strategy:** Stress stability, reliability, and protection. Use a gentle tone "
+                     "to build security and familiarity.")
+
+        # Add visual appeal with separators
+        st.markdown("---")
 
 def render_icp_questionnaire():
     """Render the ICP questionnaire."""
@@ -79,6 +109,7 @@ def render_icp_questionnaire():
     icp_data = get_user_state(user_id, "icp_data") or {}
     current_q = icp_data.get('current_question', 1)
 
+    # If the first question is unanswered, offer a fallback option
     if current_q == 1 and not icp_data.get('answers', {}).get("q1"):
         st.markdown("## Define Your ICP")
         st.markdown("If you're unsure about your ICP, click the button below.")
@@ -92,36 +123,30 @@ def render_icp_questionnaire():
             st.success("You can revisit this section later!")
             st.rerun()
 
+    # Show progress bar and question
     st.progress(current_q / 5)
     st.markdown(f"### Question {current_q} / 5")
 
+    # Retrieve the current question data
     question_data = get_question(current_q)
     if question_data:
         st.markdown(f"## {question_data['question']}")
         answer_key = f"q{current_q}"
         current_answer = icp_data.get('answers', {}).get(answer_key, '')
 
+        # Handle different question types
         if question_data['type'] == 'text_area':
-            answer = st.text_area(
-                "Your answer",
-                value=current_answer,
-                help=question_data['help']
-            )
+            answer = st.text_area("Your answer", value=current_answer, help=question_data['help'])
         elif question_data['type'] == 'select':
-            answer = st.selectbox(
-                "Select an option",
-                options=question_data['options'],
-                index=question_data['options'].index(current_answer) if current_answer in question_data['options'] else 0,
-                help=question_data['help']
-            )
+            answer = st.selectbox("Select an option", options=question_data['options'],
+                                  index=question_data['options'].index(current_answer) if current_answer in question_data['options'] else 0,
+                                  help=question_data['help'])
         elif question_data['type'] == 'multiselect':
-            answer = st.multiselect(
-                "Select all that apply",
-                options=question_data['options'],
-                default=current_answer if isinstance(current_answer, list) else [],
-                help=question_data['help']
-            )
+            answer = st.multiselect("Select all that apply", options=question_data['options'],
+                                     default=current_answer if isinstance(current_answer, list) else [],
+                                     help=question_data['help'])
 
+        # Navigation buttons
         col1, col2 = st.columns(2)
         with col1:
             if st.button("Previous", disabled=current_q == 1):
@@ -130,20 +155,20 @@ def render_icp_questionnaire():
                 st.rerun()
 
         with col2:
-            if current_q < 5:
-                if st.button("Next"):
-                    icp_data['answers'][answer_key] = answer
-                    icp_data['current_question'] += 1
-                    set_user_state(user_id, "icp_data", icp_data)
-                    st.rerun()
-            else:
-                if st.button("Complete"):
-                    icp_data['answers'][answer_key] = answer
-                    icp_data['is_completed'] = True
-                    set_user_state(user_id, "icp_data", icp_data)
+            if st.button("Next" if current_q < 5 else "Complete"):
+                # Validate that the answer is not empty
+                if not answer:
+                    st.error("Please provide an answer before proceeding.")
+                    return
+                # Save the answer and navigate
+                icp_data['answers'][answer_key] = answer
+                icp_data['current_question'] += 1 if current_q < 5 else 0
+                icp_data['is_completed'] = current_q == 5
+                set_user_state(user_id, "icp_data", icp_data)
+                if current_q == 5:
+                    # Generate recommendations upon completion
                     archetype_probabilities = calculate_archetype_probabilities(icp_data['answers'])
                     generate_recommendations(archetype_probabilities)
-                    st.success("Thank you for completing the ICP questionnaire!")
-                    st.rerun()
+                st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)

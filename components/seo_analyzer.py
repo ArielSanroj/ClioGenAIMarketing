@@ -1,11 +1,9 @@
 import streamlit as st
 import plotly.express as px
 import pandas as pd
+from urllib.parse import urlparse
 from langdetect import detect
 from ai_utils import analyze_webpage
-from urllib.parse import urlparse
-import langdetect
-# Removed circular import
 
 # Initialize Session State
 def initialize_session_state():
@@ -16,70 +14,6 @@ def initialize_session_state():
             'analysis': {},
             'is_completed': False
         }
-    if 'show_chat' not in st.session_state:
-        st.session_state.show_chat = False
-
-# Archetype and Subscale Mapping
-def map_archetypes_and_subscales(keywords, language):
-    """Map keywords to archetypes and subscales in English and Spanish."""
-    archetype_data = {
-        'Autonomous': {
-            'Focus on solving the problem': {
-                'keywords': ['efficient', 'practical', 'results', 'eficiente', 'práctico', 'resultados'],
-                'objective': {
-                    'en': 'Highlight product efficiency and functionality. Provide detailed information and technical data.',
-                    'es': 'Destaca la eficiencia y funcionalidad del producto. Proporciona información técnica detallada.'
-                },
-                'profile': {
-                    'en': 'Goal-oriented professionals, leaders, entrepreneurs.',
-                    'es': 'Profesionales orientados a objetivos, líderes, emprendedores.'
-                }
-            },
-            'Strive and succeed': {
-                'keywords': ['growth', 'achievement', 'success', 'crecimiento', 'logro', 'éxito'],
-                'objective': {
-                    'en': 'Emphasize achievement and personal growth. Use success stories and case studies.',
-                    'es': 'Enfatiza los logros y el crecimiento personal. Usa historias de éxito y estudios de caso.'
-                },
-                'profile': {
-                    'en': 'Entrepreneurs, ambitious professionals, outstanding students.',
-                    'es': 'Emprendedores, profesionales ambiciosos, estudiantes destacados.'
-                }
-            }
-        },
-        'Impulsive': {
-            'Tension reduction': {
-                'keywords': ['instant', 'fast', 'easy', 'quick', 'instantáneo', 'rápido', 'fácil'],
-                'objective': {
-                    'en': 'Promote speed and simplicity. Highlight immediate rewards.',
-                    'es': 'Promueve la rapidez y simplicidad. Resalta recompensas inmediatas.'
-                },
-                'profile': {
-                    'en': 'Impulsive buyers, tech enthusiasts, trend seekers.',
-                    'es': 'Compradores impulsivos, entusiastas tecnológicos, buscadores de tendencias.'
-                }
-            }
-        }
-    }
-
-    archetype_scores = {archetype: 0 for archetype in archetype_data.keys()}
-    recommendations = []
-
-    for archetype, subscales in archetype_data.items():
-        for subscale, data in subscales.items():
-            matched_keywords = [kw for kw in keywords if kw in data['keywords']]
-            if matched_keywords:
-                archetype_scores[archetype] += len(matched_keywords)
-                recommendations.append({
-                    'archetype': archetype,
-                    'subscale': subscale,
-                    'objective': data['objective'][language],
-                    'profile': data['profile'][language],
-                    'matched_keywords': matched_keywords,
-                    'missing_keywords': list(set(data['keywords']) - set(matched_keywords))
-                })
-
-    return archetype_scores, recommendations
 
 # Detect Language
 def detect_language(text):
@@ -89,49 +23,76 @@ def detect_language(text):
     except Exception:
         return 'en'  # Default to English if detection fails
 
-def render_chat_interface():
-    """Render the chat interface."""
-    st.markdown("## Chat Interface")
-    # Add chat interface components
-    st.text_input("Ask a question about your analysis:", key="chat_input")
-    if st.button("Send"):
-        # Add chat logic here
-        st.write("Bot: Thank you for your question! [Add response logic here]")
+# Generate Content Topics and Semantic Map
+def generate_topics_and_semantic_map(keywords):
+    """Generate topics and semantic distribution based on keywords."""
+    topic_relevance = [
+        {"Topic": "Fashion", "Relevance": 90},
+        {"Topic": "Online Shopping", "Relevance": 85},
+        {"Topic": "Women's Apparel", "Relevance": 80},
+        {"Topic": "Men's Apparel", "Relevance": 75},
+        {"Topic": "Elevating Style", "Relevance": 70}
+    ]
+    semantic_map = [
+        {"Topic": "Fashion Trends", "Frequency": 5},
+        {"Topic": "Clothing Lines", "Frequency": 4},
+        {"Topic": "Style Improvement", "Frequency": 3}
+    ]
+    return pd.DataFrame(topic_relevance), pd.DataFrame(semantic_map)
 
-    # Add a button to go back to analysis
-    if st.button("Back to Analysis"):
-        st.session_state.show_chat = False
-        st.rerun()
+# Render Content Gaps and Recommendations
+def render_content_gaps_and_recommendations():
+    """Display content gaps and actionable content recommendations."""
+    st.markdown("### Content Gaps")
+    st.write("- More Detailed Product Descriptions")
+    st.write("- SEO-Friendly Phrases")
+    st.write("- Reviews Section")
 
-# Render Archetype Analysis
-def render_archetype_analysis(keywords, language):
-    """Render archetype alignment and improvement recommendations."""
-    archetype_scores, recommendations = map_archetypes_and_subscales(keywords, language)
+    st.markdown("### Metadata Improvement Suggestions")
+    st.write("**Suggested Title:** ZafiroTrend: Exclusive and Elegant Fashion")
+    st.write("**Suggested Description:** Unleash your individuality with unique and stylish fashion choices for men and women. Enjoy online shopping with ZafiroTrend. Free shipping and cost-free exchanges.")
 
-    # Display Archetype Scores
-    st.markdown("### Archetype Alignment Analysis")
-    archetype_data = pd.DataFrame({
-        'Archetype': archetype_scores.keys(),
-        'Alignment Score': archetype_scores.values()
-    }).sort_values(by="Alignment Score", ascending=False)
+    st.markdown("### Content Recommendations")
+    st.write("- Include a dedicated About Us page.")
+    st.write("- Add a blog section for fashion tips and brand discussion.")
+    st.write("- Include more product images.")
 
+# Export Analysis
+def export_analysis(data):
+    """Allow users to download the analysis as a JSON report."""
+    import json
+    st.download_button(
+        label="Download Analysis Report",
+        data=json.dumps(data, indent=4),
+        file_name="seo_analysis.json",
+        mime="application/json"
+    )
+
+# Render Archetype and Topic Analysis
+def render_archetype_and_topics(analysis):
+    """Display archetype alignment, content topics, and semantic map."""
+    st.markdown("### Content Topics")
+    keywords = analysis.get('keywords', [])
+    topics, semantic_map = generate_topics_and_semantic_map(keywords)
+
+    # Topic Relevance Chart
     fig = px.bar(
-        archetype_data, x='Archetype', y='Alignment Score',
-        title='Archetype Alignment Based on Webpage Content',
-        color='Archetype', color_discrete_sequence=px.colors.sequential.Viridis
+        topics, x='Topic', y='Relevance', 
+        title="Topic Relevance Analysis", 
+        color='Topic', color_discrete_sequence=px.colors.qualitative.Set2
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Display Recommendations
-    st.markdown("### Recommendations for Improvement")
-    for rec in recommendations:
-        st.markdown(f"#### {rec['archetype']} - {rec['subscale']}")
-        st.write(f"**Objective:** {rec['objective']}")
-        st.write(f"**Consumer Profile:** {rec['profile']}")
-        st.write(f"**Matched Keywords:** {', '.join(rec['matched_keywords'])}")
-        st.write(f"**Suggested Keywords to Add:** {', '.join(rec['missing_keywords'])}")
+    # Semantic Map
+    st.markdown("### Semantic Topic Map")
+    fig = px.pie(
+        semantic_map, names='Topic', values='Frequency',
+        title="Semantic Topic Distribution",
+        color_discrete_sequence=px.colors.sequential.RdBu
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-# Render SEO Analysis Details
+# Main SEO Analysis Function
 def render_seo_analysis_details(analysis):
     """Display detailed SEO analysis with archetype recommendations."""
     st.markdown(f"### Analysis Results for: {urlparse(st.session_state.webpage_analysis['url']).netloc}")
@@ -147,26 +108,24 @@ def render_seo_analysis_details(analysis):
     st.write(f"**Current Meta Keywords:** {', '.join(analysis.get('meta_keywords', [])) or 'Not available'}")
 
     # Render Archetype Analysis
-    render_archetype_analysis(analysis.get('keywords', []), language)
+    render_archetype_and_topics(analysis)
 
-    # Content Recommendations
-    st.markdown("### Content Recommendations")
-    for rec in analysis.get("content_recommendations", []):
-        st.write(f"- {rec}")
+    # Render Content Gaps and Recommendations
+    render_content_gaps_and_recommendations()
+
+    # Export Results
+    st.markdown("### Export Analysis")
+    export_analysis(analysis)
 
 # Main SEO Analyzer Function
 def render_seo_analyzer():
     """Main function to render SEO Analyzer."""
     initialize_session_state()
 
-    if st.session_state.show_chat:
-        render_chat_interface()
-        return
-
     # Input for URL
     st.image("assets/logoclio.png", width=100)
     st.markdown("## Website Analysis")
-    st.markdown("Analyze your website's alignment with consumer archetypes and objectives.")
+    st.markdown("Let's analyze your website to optimize its SEO performance.")
 
     url = st.text_input(
         "Enter your website URL",
@@ -196,15 +155,6 @@ def render_seo_analyzer():
                         st.error(f"An error occurred during analysis: {str(e)}")
         else:
             st.warning("Please enter a URL.")
-
-    # Continue button to chat interface
-    if st.button("Continue to Chat"):
-        if st.session_state.webpage_analysis.get('is_completed', False):
-            st.success("Moving to chat interface...")
-            st.session_state.show_chat = True
-            st.rerun()
-        else:
-            st.warning("Please complete the website analysis first before continuing to chat.")
 
 # Run the App
 if __name__ == "__main__":

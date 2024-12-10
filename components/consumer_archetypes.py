@@ -90,11 +90,11 @@ def render_consumer_archetypes():
         if st.session_state.view_mode == 'archetypes':
             if st.button("View Subscales", key="subscale_toggle"):
                 st.session_state.view_mode = 'subscales'
-                st.experimental_rerun()
+                st.rerun()
         else:
             if st.button("Back to Archetypes", key="archetype_toggle"):
                 st.session_state.view_mode = 'archetypes'
-                st.experimental_rerun()
+                st.rerun()
 
     # Data for archetypes and subscales
     archetypes_data = load_archetypes_data()

@@ -5,7 +5,7 @@ from emotion_engine import EmotionEngine, EmotionalProfile
 import json
 import html
 import asyncio
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List
 
 # Define archetype behaviors with detailed attributes
 archetype_behaviors = {

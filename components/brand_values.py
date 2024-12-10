@@ -2,7 +2,7 @@ import streamlit as st
 import plotly.express as px
 from emotion_engine import EmotionEngine
 from utils.session_manager import get_user_state, set_user_state
-from typing import Dict, List
+from typing import Dict, List, Optional 
 
 # Initialize EmotionEngine
 emotion_engine = EmotionEngine()

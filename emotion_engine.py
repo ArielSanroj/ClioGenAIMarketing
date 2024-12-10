@@ -1,7 +1,12 @@
 from typing import Dict, List, Optional
 import numpy as np
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import json
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 @dataclass
 class EmotionalProfile:
@@ -10,6 +15,11 @@ class EmotionalProfile:
     secondary_emotions: List[str]
     psychological_triggers: List[str]
     content_tone: Dict[str, float]
+
+    def to_json(self) -> str:
+        """Serialize the emotional profile to JSON."""
+        return json.dumps(asdict(self), indent=4)
+
 
 class EmotionEngine:
     def __init__(self):
@@ -20,7 +30,7 @@ class EmotionEngine:
             'isolative': np.array([0.6, 0.2, 0.8, 0.3]),  # Safety, Privacy, Comfort, Reflection
             'avoidant': np.array([0.2, 0.1, 0.9, 0.4])    # Security, Distance, Protection, Peace
         }
-        
+
         # Psychological trigger mappings
         self.trigger_mappings = {
             'autonomous': [
@@ -40,7 +50,7 @@ class EmotionEngine:
                 'certainty', 'familiarity', 'trust', 'reliability'
             ]
         }
-        
+
         # Content tone mappings
         self.tone_mappings = {
             'autonomous': {
@@ -70,9 +80,9 @@ class EmotionEngine:
         }
 
     def analyze_emotional_context(self, 
-                                archetype: str, 
-                                brand_values: dict,
-                                audience_data: dict) -> Optional[EmotionalProfile]:
+                                  archetype: str, 
+                                  brand_values: dict,
+                                  audience_data: dict) -> Optional[EmotionalProfile]:
         """
         Analyze emotional context based on archetype, brand values, and audience data
         """
@@ -84,16 +94,16 @@ class EmotionEngine:
 
             # Calculate emotional intensity based on audience data
             intensity = self._calculate_emotional_intensity(base_vector, audience_data)
-            
+
             # Get psychological triggers
             triggers = self._get_psychological_triggers(archetype, brand_values)
-            
+
             # Get content tone mapping
             tone = self._get_content_tone(archetype, brand_values)
-            
+
             # Get secondary emotions
             secondary_emotions = self._get_secondary_emotions(archetype, intensity)
-            
+
             return EmotionalProfile(
                 primary_emotion=archetype,
                 intensity=intensity,
@@ -102,36 +112,41 @@ class EmotionEngine:
                 content_tone=tone
             )
         except Exception as e:
-            print(f"Error in emotional context analysis: {str(e)}")
+            logging.error(f"Error in emotional context analysis: {str(e)}")
             return None
 
     def _calculate_emotional_intensity(self, base_vector: np.ndarray, audience_data: dict) -> float:
-        """Calculate emotional intensity based on audience data and base vector"""
+        """Calculate emotional intensity using engagement, sentiment, and archetype importance."""
         try:
-            # Extract relevant metrics from audience data
             engagement = audience_data.get('engagement_rate', 0.5)
             sentiment = audience_data.get('sentiment_score', 0.5)
-            
-            # Calculate weighted intensity
-            intensity = np.mean(base_vector) * engagement * sentiment
+            archetype_importance = audience_data.get('archetype_importance', 1.0)
+
+            intensity = np.mean(base_vector) * engagement * sentiment * archetype_importance
             return float(np.clip(intensity, 0.1, 1.0))
-        except Exception:
+        except Exception as e:
+            logging.error(f"Error in calculating emotional intensity: {e}")
             return 0.5
 
     def _get_psychological_triggers(self, archetype: str, brand_values: dict) -> List[str]:
-        """Get psychological triggers based on archetype and brand values"""
-        base_triggers = self.trigger_mappings.get(archetype.lower(), [])
-        brand_keywords = brand_values.get('keywords', [])
-        
-        # Combine and prioritize triggers that align with brand values
-        combined_triggers = []
-        for trigger in base_triggers:
-            if any(keyword in trigger for keyword in brand_keywords):
-                combined_triggers.insert(0, trigger)
-            else:
-                combined_triggers.append(trigger)
-        
-        return combined_triggers[:5]  # Return top 5 most relevant triggers
+        """Get psychological triggers based on archetype, brand values, and mission/vision."""
+        try:
+            base_triggers = self.trigger_mappings.get(archetype.lower(), [])
+            brand_keywords = brand_values.get('keywords', [])
+            mission_keywords = brand_values.get('mission', '').lower().split()
+            vision_keywords = brand_values.get('vision', '').lower().split()
+
+            combined_triggers = []
+            for trigger in base_triggers:
+                if any(keyword in trigger for keyword in brand_keywords + mission_keywords + vision_keywords):
+                    combined_triggers.insert(0, trigger)
+                else:
+                    combined_triggers.append(trigger)
+
+            return combined_triggers[:5]
+        except Exception as e:
+            logging.error(f"Error in getting psychological triggers: {e}")
+            return []
 
     def calculate_archetype_alignment(self, brand_values: dict) -> Dict[str, float]:
         alignment_scores = {}
@@ -142,18 +157,17 @@ class EmotionEngine:
             alignment_scores[archetype] = len(matching_keywords) / len(triggers)
         return alignment_scores
 
-
     def _get_content_tone(self, archetype: str, brand_values: dict) -> Dict[str, float]:
         """Get content tone mapping based on archetype and brand values"""
         base_tone = self.tone_mappings.get(archetype.lower(), {})
         brand_tone = brand_values.get('tone', {})
-        
+
         # Combine and adjust tone weights based on brand values
         combined_tone = base_tone.copy()
         for tone, weight in brand_tone.items():
             if tone in combined_tone:
                 combined_tone[tone] = (combined_tone[tone] + float(weight)) / 2
-        
+
         return combined_tone
 
     def _get_secondary_emotions(self, archetype: str, intensity: float) -> List[str]:
@@ -164,7 +178,7 @@ class EmotionEngine:
             'isolative': ['peaceful', 'content', 'mindful', 'balanced'],
             'avoidant': ['cautious', 'careful', 'measured', 'reserved']
         }
-        
+
         base_emotions = emotion_sets.get(archetype.lower(), [])
         # Return more secondary emotions for higher intensity
         return base_emotions[:max(2, int(intensity * len(base_emotions)))]
@@ -174,26 +188,30 @@ class EmotionEngine:
         try:
             # Apply tone adjustments
             optimized_content = self._adjust_tone(content, emotional_profile.content_tone)
-            
+
             # Insert psychological triggers
             optimized_content = self._insert_triggers(
                 optimized_content, 
                 emotional_profile.psychological_triggers
             )
-            
+
             return optimized_content
         except Exception as e:
-            print(f"Error in content optimization: {str(e)}")
+            logging.error(f"Error in content optimization: {e}")
             return content
 
     def _adjust_tone(self, content: str, tone_mapping: Dict[str, float]) -> str:
-        """Adjust content tone based on tone mapping"""
-        # This is a placeholder for tone adjustment logic
-        # In a real implementation, this would use NLP to modify sentence structures
+        """Adjust content tone dynamically using NLP (placeholder logic)."""
+        # Example: Implement real NLP tone adjustments here
         return content
 
     def _insert_triggers(self, content: str, triggers: List[str]) -> str:
-        """Insert psychological triggers into content"""
-        # This is a placeholder for trigger insertion logic
-        # In a real implementation, this would strategically place triggers
-        return content
+        """Insert psychological triggers into high-impact positions."""
+        try:
+            for trigger in triggers:
+                if trigger not in content:
+                    content += f" {trigger.capitalize()}!"
+            return content
+        except Exception as e:
+            logging.error(f"Error in inserting triggers: {e}")
+            return content

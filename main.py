@@ -12,6 +12,10 @@ from utils.session_manager import get_user_state, get_current_user_id, set_user_
 from plotly import express as px
 from components.icp_definition import render_icp_questionnaire
 from components.chat_interface import render_chat_interface
+from components.archetype_analysis import render_archetype_analysis
+import pandas as pd
+
+
 
 
 def initialize_state(user_id):
@@ -21,6 +25,7 @@ def initialize_state(user_id):
         "icp_data": {"is_completed": False},
         "seo_analyzer": {"is_completed": False},
         "content_generator": {"is_completed": False},
+        "archetype_analysis": {"is_completed": False},
     }
     for key, default in default_states.items():
         if not get_user_state(user_id, key):
@@ -29,7 +34,7 @@ def initialize_state(user_id):
 
 def next_incomplete_stage(user_id):
     """Determine the next incomplete stage in the user flow."""
-    stages = ["brand_values", "icp_data", "seo_analyzer", "content_generator"]
+    stages = ["brand_values", "icp_data", "seo_analyzer", "archetype_analysis", "content_generator"]
     for stage in stages:
         if not get_user_state(user_id, stage).get('is_completed', False):
             return stage
@@ -118,18 +123,37 @@ def main():
         if next_stage == "brand_values":
             st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
             render_brand_values()
+            if st.button("Continue"):
+                set_user_state(user_id, "brand_values", {"is_completed": True})
+                st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
         elif next_stage == "icp_data":
             st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
             render_icp_questionnaire()
+            if st.button("Continue"):
+                set_user_state(user_id, "icp_data", {"is_completed": True})
+                st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
         elif next_stage == "seo_analyzer":
             st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
             render_seo_analyzer()
+            if st.button("Continue"):
+                set_user_state(user_id, "seo_analyzer", {"is_completed": True})
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+        elif next_stage == "archetype_analysis":
+            st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
+            render_archetype_analysis()
+            if st.button("Continue"):
+                set_user_state(user_id, "archetype_analysis", {"is_completed": True})
+                st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
         elif next_stage == "content_generator":
             st.markdown('<div class="welcome-screen">', unsafe_allow_html=True)
             render_content_generator()
+            if st.button("Continue"):
+                set_user_state(user_id, "content_generator", {"is_completed": True})
+                st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
         else:
             # Render sidebar and dashboard if all stages are completed

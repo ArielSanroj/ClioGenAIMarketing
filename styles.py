@@ -6,23 +6,24 @@ def apply_custom_styles():
         /* Main layout and colors */
         .main {
             background-color: #F9F9FB !important;
-            padding: 2rem !important;
+            padding: 1.5rem !important;
         }
         
         /* Title styling */
-        h1 {
+        h1, h2 {
             color: #1E1B4B !important;
-            font-size: 2rem !important;
-            margin-bottom: 2rem !important;
+            font-size: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
+            font-weight: 600 !important;
         }
         
         /* Input field styling */
         .stTextInput > div > div > input {
-            background-color: #1E1B4B !important;
-            color: white !important;
-            border: none !important;
-            border-radius: 8px !important;
-            padding: 1rem !important;
+            background-color: white !important;
+            color: #1E1B4B !important;
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 4px !important;
+            padding: 0.75rem !important;
             margin-bottom: 1rem !important;
         }
         
@@ -31,16 +32,23 @@ def apply_custom_styles():
             background-color: #1E1B4B !important;
             color: white !important;
             width: 100% !important;
-            padding: 1rem !important;
+            padding: 0.75rem !important;
             border: none !important;
-            border-radius: 8px !important;
-            margin-bottom: 1rem !important;
+            border-radius: 4px !important;
+            margin: 0.5rem 0 !important;
             cursor: pointer !important;
+            font-weight: 500 !important;
         }
         
         /* Hide Streamlit elements */
         #MainMenu {visibility: hidden !important;}
         footer {visibility: hidden !important;}
         header {visibility: hidden !important;}
+        
+        /* Custom paragraph styling */
+        p {
+            color: #4A5568 !important;
+            margin-bottom: 0.5rem !important;
+        }
         </style>
     """, unsafe_allow_html=True)

@@ -2,7 +2,7 @@ import os
 import json
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 import requests
 from openai import OpenAI
 
@@ -10,6 +10,40 @@ from openai import OpenAI
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
+# Archetype Data
+archetype_data = {
+    "Autonomous": {
+        "Focus on solving the problem": {
+            "keywords": ["efficient", "practical", "results", "growth", "achievement"],
+            "interpretation": "Consumers with high logical reasoning and organization skills.",
+            "neuromarketing_objective": "Highlight product efficiency and functionality. Provide technical data.",
+            "consumer_type": "Goal-oriented professionals, leaders, entrepreneurs."
+        },
+        "Strive and succeed": {
+            "keywords": ["growth", "success", "achievement"],
+            "interpretation": "Highly motivated, perseverant, and ambitious consumers.",
+            "neuromarketing_objective": "Emphasize achievement and personal growth with success stories.",
+            "consumer_type": "Entrepreneurs, ambitious professionals, outstanding students."
+        }
+    },
+    "Impulsive": {
+        "Tension reduction": {
+            "keywords": ["quick", "easy", "instant"],
+            "interpretation": "Consumers with low frustration tolerance, seeking immediate gratification.",
+            "neuromarketing_objective": "Offer instant satisfaction and ease of use.",
+            "consumer_type": "Impulsive buyers, tech enthusiasts, trend seekers."
+        },
+        "Self-blame": {
+            "keywords": ["change", "improve", "growth"],
+            "interpretation": "Consumers who tend to blame themselves or others.",
+            "neuromarketing_objective": "Use positive messages that boost self-esteem.",
+            "consumer_type": "People seeking change and personal development."
+        }
+    },
+    # Add additional archetypes and subscales as necessary
+}
+
+# Function Definitions
 def validate_inputs(story: str, content_type: str) -> bool:
     """Validate input parameters before generating content."""
     return bool(story and story.strip() and content_type and content_type.strip())
@@ -237,3 +271,33 @@ def analyze_webpage(url: str) -> dict:
 
     except Exception as e:
         return {"error": f"Error analyzing webpage: {str(e)}"}
+
+def match_archetypes_and_subscales(brand_values: Dict, icp_data: Dict, seo_data: Dict) -> Tuple[Dict[str, int], List[Dict]]:
+    """Match user data to archetypes and subscales."""
+    archetype_scores = {
+        "Autonomous": 0,
+        "Impulsive": 0,
+        "Avoidant": 0,
+        "Isolated": 0
+    }
+    subscale_matches = []
+
+    # Match keywords to archetypes and subscales
+    for archetype, subscales in archetype_data.items():
+        for subscale, data in subscales.items():
+            matched_keywords = [
+                kw for kw in brand_values.get('keywords', []) if kw in data['keywords']
+            ]
+            if matched_keywords:
+                archetype_scores[archetype] += len(matched_keywords)
+                subscale_matches.append({
+                    'archetype': archetype,
+                    'subscale': subscale,
+                    'interpretation': data['interpretation'],
+                    'neuromarketing_objective': data['neuromarketing_objective'],
+                    'consumer_type': data['consumer_type'],
+                    'matched_keywords': matched_keywords,
+                    'missing_keywords': list(set(data['keywords']) - set(matched_keywords))
+                })
+
+    return archetype_scores, subscale_matches
