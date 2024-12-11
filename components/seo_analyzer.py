@@ -36,6 +36,35 @@ def analyze_webpage(url):
         meta_keywords = meta_keywords["content"].split(",") if meta_keywords else []
 
         # Extract headings for semantic relevance
+
+def calculate_archetype_scores(meta_keywords, visible_text):
+    """Calculate archetype alignment scores based on keywords and content."""
+    scores = {
+        "Autonomous": 0,
+        "Impulsive": 0,
+        "Isolative": 0,
+        "Avoidant": 0
+    }
+    
+    # Combine keywords and text for analysis
+    content = " ".join(meta_keywords).lower() + " " + visible_text.lower()
+    
+    # Keyword mappings for archetypes
+    archetype_keywords = {
+        "Autonomous": ["efficiency", "growth", "success", "professional", "achievement"],
+        "Impulsive": ["quick", "easy", "instant", "new", "trending"],
+        "Isolative": ["privacy", "security", "independent", "personal"],
+        "Avoidant": ["comfort", "escape", "relax", "dream"]
+    }
+    
+    # Calculate scores based on keyword frequency
+    for archetype, keywords in archetype_keywords.items():
+        for keyword in keywords:
+            scores[archetype] += content.count(keyword) * 10
+            
+    return scores
+
+
         headings = [h.get_text(strip=True) for h in soup.find_all(re.compile("^h[1-6]$"))]
 
         # Extract visible text
