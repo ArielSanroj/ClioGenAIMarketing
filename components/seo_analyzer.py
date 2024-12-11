@@ -61,25 +61,48 @@ def analyze_webpage(url):
         return {"error": f"Error analyzing webpage: {str(e)}"}
 
 # Map Data to Brand Values and ICP
-def map_to_brand_values_and_icp(content):
-    """Map website content to brand values and ICP."""
-    # Extract mission from content and meta description
-    mission = content[:100] if content else "Deliver exceptional products and services"
+def map_to_brand_values_and_icp(content, meta_description, meta_keywords):
+    """Map website content to brand values and ICP dynamically."""
+    # Extract common words and phrases
+    words = content.lower().split()
+    word_freq = {}
+    for word in words:
+        if len(word) > 3:  # Skip small words
+            word_freq[word] = word_freq.get(word, 0) + 1
+    
+    # Get top keywords
+    top_keywords = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:5]
+    values = [word for word, _ in top_keywords if word not in ['this', 'that', 'with', 'from']]
+    
+    # Extract mission from meta description or content
+    mission = meta_description if meta_description != "No Description Found" else " ".join(words[:10])
+    
+    # Map demographics based on content
+    demographics = {
+        "age_range": "25-45",  # Default
+        "interests": values[:3] if values else ["general"],
+    }
+    
+    # Extract pain points from content
+    pain_points = []
+    pain_indicators = ["without", "lacks", "needs", "improve", "better"]
+    for indicator in pain_indicators:
+        if indicator in content.lower():
+            idx = content.lower().find(indicator)
+            pain_points.append(content[idx:idx+50].strip())
     
     brand_values = {
         "mission": mission,
-        "values": ["creativity", "exclusivity", "luxury"],
-        "virtues": ["customer-centricity", "high-quality"],
+        "values": values[:3],
+        "virtues": meta_keywords[:3] if meta_keywords else values[3:],
         "is_completed": True,
     }
+    
     icp_data = {
-        "demographics": {
-            "age_range": "20-40",
-            "interests": ["fashion", "elegance", "luxury"],
-        },
+        "demographics": demographics,
         "psychographics": {
-            "priorities": ["style", "individuality", "comfort"],
-            "pain_points": ["need for accessible luxury", "lack of quality options"],
+            "priorities": values[:3],
+            "pain_points": pain_points[:2] if pain_points else ["No clear pain points detected"],
         },
         "is_completed": True,
     }
@@ -128,7 +151,11 @@ def render_seo_analyzer():
                     st.error(analysis["error"])
                 else:
                     # Step 2: Map data to Brand Values and ICP
-                    brand_values, icp_data = map_to_brand_values_and_icp(analysis["visible_text"])
+                    brand_values, icp_data = map_to_brand_values_and_icp(
+                        analysis["visible_text"],
+                        analysis["meta_description"],
+                        analysis["meta_keywords"]
+                    )
 
                     # Step 3: Calculate archetype alignment
                     archetype_scores = calculate_archetype_scores(analysis["meta_keywords"])
