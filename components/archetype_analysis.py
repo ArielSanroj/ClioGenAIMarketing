@@ -1,8 +1,47 @@
+
 import json
 import pandas as pd
 import streamlit as st
-from ai_utils import match_archetypes_and_subscales
+from ai_utils import match_archetypes_and_subscales, calculate_archetype_probabilities, generate_archetype_recommendations
 
+class ArchetypeAnalyzer:
+    def __init__(self):
+        self.scores = {}
+        self.recommendations = []
+        self.campaign_suggestions = []
+
+    def analyze_content(self, content: str):
+        # Calculate archetype probabilities
+        self.scores = calculate_archetype_probabilities(
+            brand_values={"keywords": self._extract_keywords(content)},
+            icp_data={},
+            seo_analysis={}
+        )
+        
+        # Generate recommendations
+        recommendations = generate_archetype_recommendations(self.scores)
+        self.recommendations = []
+        self.campaign_suggestions = []
+        
+        for archetype, data in recommendations.items():
+            if "campaign_ideas" in data:
+                self.recommendations.extend(data["campaign_ideas"])
+                self.campaign_suggestions.append({
+                    "archetype": archetype,
+                    "tone": "Professional" if archetype == "Autonomous" else "Emotional",
+                    "channels": ["Website", "Email", "LinkedIn"] if archetype == "Autonomous" else ["Social Media", "Blog"],
+                    "content_types": ["Case Studies", "Whitepapers"] if archetype == "Autonomous" else ["Stories", "Videos"],
+                    "example_messages": data["campaign_ideas"]
+                })
+        
+        return self
+
+    def _extract_keywords(self, content: str) -> list:
+        # Simple keyword extraction
+        words = content.lower().split()
+        keywords = []
+        important_words = ["efficiency", "growth", "creativity", "comfort", "security", "trust"]
+        return [word for word in words if word in important_words]
 
 def render_archetype_analysis():
     """Render archetype and subscale analysis results."""
