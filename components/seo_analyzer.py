@@ -268,6 +268,9 @@ def render_seo_analyzer():
                     })
 
                     st.success("SEO Analysis completed successfully!")
+                    render_results()
+        else:
+            st.warning("Please enter a valid URL.")
 
 def render_results():
     """Display the analysis results."""
@@ -288,8 +291,3 @@ def render_results():
         st.subheader("Recommendations")
         for rec in st.session_state.webpage_analysis["recommendations"]:
             st.write("•", rec)
-
-
-                    render_results()
-        else:
-            st.warning("Please enter a valid URL.")
