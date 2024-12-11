@@ -1,17 +1,3 @@
-
-def initialize_session_state():
-    """Initialize session state variables if they don't exist"""
-    if 'webpage_analysis' not in st.session_state:
-        st.session_state.webpage_analysis = {
-            'url': '',
-            'brand_values': {},
-            'icp_data': {},
-            'archetype_scores': {},
-            'recommendations': [],
-            'is_completed': False
-        }
-
-
 import streamlit as st
 from urllib.parse import urlparse
 import requests
@@ -25,19 +11,7 @@ def detect_language(text):
     try:
         return detect(text)
     except:
-        return 'en'  # Default to English if detection fails
-
-def get_stopwords(language):
-    if language == 'es':
-        return {
-            "y", "el", "la", "los", "las", "un", "una", "unos", "unas", "de", "del", "para", 
-            "por", "con", "sin", "sobre", "entre", "detrás", "después", "esto", "esta", "que"
-        }
-    else:  # English default
-        return {
-            "and", "the", "for", "with", "from", "this", "that", "your", "our", "their",
-            "we", "are", "has", "have", "been", "would", "could", "should", "will"
-        }
+        return 'en'
 
 def analyze_webpage(url):
     try:
@@ -46,25 +20,20 @@ def analyze_webpage(url):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Extract all text content
         visible_text = " ".join([text for text in soup.stripped_strings 
                                if any(c.isalpha() for c in text)])[:3000]
 
-        # Detect language from visible text
         language = detect_language(visible_text)
 
-        # Extract metadata
         title = soup.title.string if soup.title else ""
         meta_description = soup.find("meta", {"name": "description"})
         meta_description = meta_description["content"] if meta_description else ""
 
-        # Extract meta keywords
         meta_keywords = []
         keywords_meta = soup.find("meta", {"name": re.compile(r"keywords", re.I)})
         if keywords_meta and keywords_meta.get("content"):
             meta_keywords = [k.strip() for k in keywords_meta["content"].split(",")]
 
-        # Extract headings
         headings = []
         for tag in soup.find_all(re.compile("^h[1-6]$")):
             text = tag.get_text(strip=True)
@@ -82,154 +51,163 @@ def analyze_webpage(url):
     except Exception as e:
         return {"error": f"Error analyzing webpage: {str(e)}"}
 
-def get_pain_point_indicators(language):
-    if language == 'es':
-        return ["sin", "falta", "necesita", "difícil", "problema", "busca", "quiere"]
-    else:
-        return ["without", "lack", "need", "difficult", "problem", "looking", "want"]
+def map_to_brand_values_and_icp(content, meta_description, headings, language='en'):
+    stopwords = {"and", "the", "for", "with", "from", "this", "that", "your"} if language == 'en' else \
+                {"y", "el", "la", "los", "las", "un", "una", "para", "con"}
 
-def get_keyword_map(language):
-    if language == 'es':
-        return {
-            "eficiencia": "Autonomous",
-            "calidad": "Autonomous",
-            "profesional": "Autonomous",
-            "lujo": "Impulsive",
-            "elegancia": "Impulsive",
-            "exclusivo": "Impulsive",
-            "comodidad": "Avoidant",
-            "fácil": "Avoidant",
-            "simple": "Avoidant"
-        }
-    else:
-        return {
-            "efficiency": "Autonomous",
-            "quality": "Autonomous",
-            "professional": "Autonomous",
-            "luxury": "Impulsive",
-            "elegance": "Impulsive",
-            "exclusive": "Impulsive",
-            "comfort": "Avoidant",
-            "easy": "Avoidant",
-            "simple": "Avoidant"
-        }
-
-def map_to_brand_values_and_icp(content, meta_description, headings, language):
-    stopwords = get_stopwords(language)
-
-    # Extract meaningful words
     words = re.findall(r'\w+', content.lower())
     filtered_words = [word for word in words if word not in stopwords and len(word) > 3]
     word_freq = Counter(filtered_words)
 
-    # Set mission from meta description or first heading
     mission = meta_description if meta_description else (headings[0] if headings else "")
-
-    # Extract top keywords and values
-    values = [word for word, _ in word_freq.most_common(5) 
-             if word not in stopwords][:3]
-
-    # Extract virtues based on language
-    if language == 'es':
-        virtue_keywords = ["calidad", "diseño", "estilo", "elegancia"]
-        default_virtues = ["Calidad Premium", "Diseño Exclusivo"]
-    else:
-        virtue_keywords = ["quality", "design", "style", "elegance"]
-        default_virtues = ["Premium Quality", "Exclusive Design"]
-
-    virtues = []
-    for heading in headings:
-        if any(word in heading.lower() for word in virtue_keywords):
-            virtues.append(heading)
-    if not virtues:
-        virtues = default_virtues
-
-    # Define demographics and psychographics
-    if language == 'es':
-        default_interests = ["moda", "estilo", "tendencias"]
-    else:
-        default_interests = ["fashion", "style", "trends"]
-
-    demographics = {
-        "age_range": "25-45",
-        "interests": values[:3] if values else default_interests
-    }
-
-    psychographics = {
-        "priorities": virtues[:3],
-        "pain_points": extract_pain_points(content, language)
-    }
+    values = [word for word, _ in word_freq.most_common(5)][:3]
 
     return {
         "brand_values": {
             "mission": mission,
             "values": values,
-            "virtues": virtues[:2],
+            "virtues": headings[:2] if headings else ["Quality", "Innovation"],
             "is_completed": True
         },
         "icp_data": {
-            "demographics": demographics,
-            "psychographics": psychographics,
+            "demographics": {
+                "age_range": "25-45",
+                "interests": values[:3]
+            },
+            "psychographics": {
+                "priorities": headings[:3] if headings else [],
+                "pain_points": ["No specific pain points detected"]
+            },
             "is_completed": True
         }
     }
 
-def extract_pain_points(content, language):
-    pain_indicators = get_pain_point_indicators(language)
-    pain_points = []
+def calculate_archetype_scores(meta_keywords, content):
+    archetypes_data = {
+        'Autonomous': {
+            'keywords': ['efficiency', 'professional', 'optimization', 'results', 'performance'],
+            'weight': 1.2
+        },
+        'Impulsive': {
+            'keywords': ['new', 'exclusive', 'limited', 'offer', 'now', 'instant'],
+            'weight': 1.0
+        },
+        'Isolative': {
+            'keywords': ['private', 'independent', 'personal', 'individual', 'unique'],
+            'weight': 0.8
+        },
+        'Avoidant': {
+            'keywords': ['escape', 'relax', 'comfort', 'easy', 'simple', 'secure'],
+            'weight': 0.8
+        }
+    }
 
-    for sentence in content.split("."):
-        if any(indicator in sentence.lower() for indicator in pain_indicators):
-            cleaned = sentence.strip()
-            if len(cleaned) > 10:
-                pain_points.append(cleaned)
-
-    if not pain_points:
-        return ["No specific pain points detected"] if language == 'en' else ["No se detectaron puntos de dolor específicos"]
-
-    return pain_points[:3]
-
-def calculate_archetype_scores(meta_keywords, content, language):
-    keyword_map = get_keyword_map(language)
-    archetypes = {"Autonomous": 0, "Impulsive": 0, "Avoidant": 0}
+    scores = {archetype: 0 for archetype in archetypes_data.keys()}
 
     # Process content
     words = re.findall(r'\w+', content.lower())
     for word in words:
-        if word in keyword_map:
-            archetypes[keyword_map[word]] += 1
+        for archetype, data in archetypes_data.items():
+            if word in data['keywords']:
+                scores[archetype] += data['weight']
 
     # Process meta keywords
     for keyword in meta_keywords:
         keyword = keyword.lower().strip()
-        if keyword in keyword_map:
-            archetypes[keyword_map[keyword]] += 2
+        for archetype, data in archetypes_data.items():
+            if keyword in data['keywords']:
+                scores[archetype] += data['weight'] * 2
 
     # Normalize scores
-    total = sum(archetypes.values()) or 1
-    return {k: round(v / total * 100, 2) for k, v in archetypes.items()}
+    total = sum(scores.values()) or 1
+    normalized_scores = {k: round((v / total) * 100) for k, v in scores.items()}
 
-def generate_recommendations(archetype_scores, language):
-    if language == 'es':
-        recommendations = []
-        if archetype_scores.get("Autonomous", 0) > 30:
-            recommendations.append("Destaca la funcionalidad y calidad premium ('Diseñado para la Excelencia').")
-        if archetype_scores.get("Impulsive", 0) > 30:
-            recommendations.append("Resalta la exclusividad y el lujo a través de historias aspiracionales ('Elegancia Moderna para Ti').")
-        if archetype_scores.get("Avoidant", 0) > 30:
-            recommendations.append("Enfócate en la comodidad y facilidad de compra ('Experiencia de Compra Sin Complicaciones').")
-        return recommendations or ["Personaliza tu estrategia de marketing basada en los valores de marca identificados."]
-    else:
-        recommendations = []
-        if archetype_scores.get("Autonomous", 0) > 30:
-            recommendations.append("Highlight functionality and premium quality ('Designed for Excellence').")
-        if archetype_scores.get("Impulsive", 0) > 30:
-            recommendations.append("Emphasize exclusivity and luxury through aspirational storytelling ('Modern Elegance for You').")
-        if archetype_scores.get("Avoidant", 0) > 30:
-            recommendations.append("Focus on comfort and easy shopping experience ('Hassle-Free Shopping Experience').")
-        return recommendations or ["Customize your marketing strategy based on identified brand values."]
+    # Filter out zero scores
+    return {k: v for k, v in normalized_scores.items() if v > 0}
 
-# Update the render_seo_analyzer function to pass language to all relevant functions
+def generate_recommendations(archetype_scores):
+    recommendations = []
+
+    if archetype_scores.get("Autonomous", 0) > 30:
+        recommendations.append("Focus on efficiency and ROI-driven messaging")
+    if archetype_scores.get("Impulsive", 0) > 30:
+        recommendations.append("Implement urgency-based campaigns and exclusive offers")
+    if archetype_scores.get("Isolative", 0) > 30:
+        recommendations.append("Highlight privacy features and personal control")
+    if archetype_scores.get("Avoidant", 0) > 30:
+        recommendations.append("Emphasize comfort and stress-free experiences")
+
+    return recommendations
+
+def render_results():
+    if not hasattr(st.session_state, 'webpage_analysis'):
+        st.warning("Please analyze a webpage first.")
+        return
+
+    st.markdown("""
+        <style>
+        .stApp {
+            background-color: #F9F9FB;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    archetype_scores = st.session_state.webpage_analysis["archetype_scores"]
+    archetypes_data = load_archetypes_data()
+
+    # Header
+    st.markdown("""
+        <h2 style="color: #1E1B4B; font-size: 2rem; margin-top: 1rem;">Analysis Results</h2>
+    """, unsafe_allow_html=True)
+
+    # Render scores chart
+    st.markdown("### Archetype Distribution")
+    chart_data = pd.DataFrame(list(archetype_scores.items()), columns=["Archetype", "Score"])
+    st.bar_chart(chart_data.set_index("Archetype"))
+
+    # Render archetype cards for scores > 0
+    st.markdown("### Detected Archetypes")
+    for name, score in archetype_scores.items():
+        if score > 0 and name in archetypes_data:
+            data = archetypes_data[name]
+            card_html = f"""
+            <div style="background: white; border-radius: 12px; margin: 1.5rem 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);">
+                <div style="padding: 2rem;">
+                    <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
+                        <div style="width: 4.5rem; height: 4.5rem; border-radius: 50%; background-color: {data['color']}; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                            <span style="font-weight: bold; color: #1E1B4B;">{score}%</span>
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <h3 style="margin: 0; color: #1E1B4B; font-size: 1.5rem; font-weight: 600; line-height: 1.2;">{name}</h3>
+                            <div style="margin-top: 1.25rem; color: #4A4867;">
+                                <p style="margin: 0 0 1rem; line-height: 1.6;">{data['segment']}</p>
+                                <p style="margin: 0 0 1rem; line-height: 1.6;"><b>Client Type:</b> {data['client_type']}</p>
+                                <p style="margin: 0; line-height: 1.6;"><b>Campaign Strategy:</b> {data['campaign']}</p>
+                            </div>
+                            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #E5E7EB;">
+                                <h4 style="font-size: 1rem; font-weight: 500; margin: 0 0 0.75rem; color: #1E1B4B;">Profile Example:</h4>
+                                <p style="color: #4A4867; margin: 0; line-height: 1.6;">{data['profile']}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
+
+    # Render recommendations
+    if st.session_state.webpage_analysis["recommendations"]:
+        st.markdown("### Strategic Recommendations")
+        recs_html = """
+        <div style="background: white; border-radius: 12px; padding: 2rem; margin: 1.5rem 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <h4 style="color: #1E1B4B; margin: 0 0 1rem;">Based on your audience profile:</h4>
+            <ul style="color: #4A4867; margin: 0; padding-left: 1.5rem;">
+        """
+        for rec in st.session_state.webpage_analysis["recommendations"]:
+            recs_html += f'<li style="margin-bottom: 0.75rem;">{rec}</li>'
+        recs_html += "</ul></div>"
+        st.markdown(recs_html, unsafe_allow_html=True)
+
 def render_seo_analyzer():
     initialize_session_state()
     st.image("assets/logoclio.png", width=100)
@@ -244,19 +222,19 @@ def render_seo_analyzer():
                 if "error" in analysis:
                     st.error(analysis["error"])
                 else:
-                    language = analysis.get("language", "en")
                     results = map_to_brand_values_and_icp(
-                        analysis["visible_text"], 
-                        analysis["meta_description"], 
-                        analysis["headings"],
-                        language
-                    )
-                    archetype_scores = calculate_archetype_scores(
-                        analysis["meta_keywords"], 
                         analysis["visible_text"],
-                        language
+                        analysis["meta_description"],
+                        analysis["headings"],
+                        analysis.get("language", "en")
                     )
-                    recommendations = generate_recommendations(archetype_scores, language)
+
+                    archetype_scores = calculate_archetype_scores(
+                        analysis["meta_keywords"],
+                        analysis["visible_text"]
+                    )
+
+                    recommendations = generate_recommendations(archetype_scores)
 
                     st.session_state.webpage_analysis.update({
                         "url": url,
@@ -264,30 +242,59 @@ def render_seo_analyzer():
                         "icp_data": results["icp_data"],
                         "archetype_scores": archetype_scores,
                         "recommendations": recommendations,
-                        "is_completed": True
+                        "is_completed": True,
                     })
 
-                    st.success("SEO Analysis completed successfully!")
+                    st.success("Analysis completed successfully!")
                     render_results()
         else:
             st.warning("Please enter a valid URL.")
 
-def render_results():
-    """Display the analysis results."""
-    if st.session_state.webpage_analysis["is_completed"]:
-        # Display Brand Values
-        st.subheader("Brand Values")
-        st.json(st.session_state.webpage_analysis["brand_values"])
-        
-        # Display ICP Data
-        st.subheader("Ideal Customer Profile")
-        st.json(st.session_state.webpage_analysis["icp_data"])
-        
-        # Display Archetype Scores
-        st.subheader("Archetype Scores")
-        st.json(st.session_state.webpage_analysis["archetype_scores"])
-        
-        # Display Recommendations
-        st.subheader("Recommendations")
-        for rec in st.session_state.webpage_analysis["recommendations"]:
-            st.write("•", rec)
+def load_archetypes_data():
+    """
+    Load archetypes data for display.
+    """
+    return {
+        'Autonomous': {
+            'segment': 'Clients seeking efficiency and autonomy.',
+            'client_type': 'Professionals and entrepreneurs.',
+            'campaign': 'Case studies and ROI-focused campaigns.',
+            'color': '#FFE4D6',
+            'profile': 'María, Project Manager, 35 years old. Values tools for time optimization.'
+        },
+        'Impulsive': {
+            'segment': 'Clients driven by urgency and emotional triggers.',
+            'client_type': 'Tech enthusiasts and trend seekers.',
+            'campaign': 'Emotional messaging with flash sales.',
+            'color': '#E6E6FA',
+            'profile': 'Juan, University Student, 22 years old. Attracted to flash sales.'
+        },
+        'Isolative': {
+            'segment': 'Clients valuing simplicity and privacy.',
+            'client_type': 'Introverts, privacy-focused individuals.',
+            'campaign': 'Highlight autonomy and stress-free experiences.',
+            'color': '#FFD700',
+            'profile': 'Carlos, Independent Writer, prefers personal solutions.'
+        },
+        'Avoidant': {
+            'segment': 'Clients seeking escape and security.',
+            'client_type': 'Dreamers and fantasy seekers.',
+            'campaign': 'Aspirational, storytelling-based campaigns.',
+            'color': '#FF6B6B',
+            'profile': 'Laura, Health Professional, values relaxation tools.'
+        }
+    }
+
+def initialize_session_state():
+    if "webpage_analysis" not in st.session_state:
+        st.session_state.webpage_analysis = {
+            "url": "",
+            "brand_values": {"mission": "", "values": [], "virtues": [], "is_completed": False},
+            "icp_data": {"demographics": {}, "psychographics": {}, "is_completed": False},
+            "archetype_scores": {},
+            "recommendations": [],
+            "is_completed": False,
+        }
+
+if __name__ == "__main__":
+    render_seo_analyzer()
