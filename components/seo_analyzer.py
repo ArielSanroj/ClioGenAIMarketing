@@ -1,160 +1,164 @@
 import streamlit as st
-import plotly.express as px
-import pandas as pd
 from urllib.parse import urlparse
-from langdetect import detect
-from ai_utils import analyze_webpage
+import requests
+from bs4 import BeautifulSoup
+import json
+import pandas as pd
+import plotly.express as px
 
 # Initialize Session State
 def initialize_session_state():
-    """Initialize the session state variables for SEO analyzer."""
-    if 'webpage_analysis' not in st.session_state:
+    """Initialize the session state for SEO analyzer."""
+    if "webpage_analysis" not in st.session_state:
         st.session_state.webpage_analysis = {
-            'url': '',
-            'analysis': {},
-            'is_completed': False
+            "url": "",
+            "brand_values": {
+                "mission": "",
+                "values": [],
+                "virtues": [],
+                "is_completed": False,
+            },
+            "icp_data": {
+                "demographics": {},
+                "psychographics": {},
+                "is_completed": False,
+            },
+            "archetype_scores": {},
+            "is_completed": False,
         }
 
-# Detect Language
-def detect_language(text):
-    """Detect the language of the text."""
+# Extract Website Data
+def analyze_webpage(url):
+    """Scrape the website and extract metadata and content."""
     try:
-        return detect(text)
-    except Exception:
-        return 'en'  # Default to English if detection fails
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
 
-# Generate Content Topics and Semantic Map
-def generate_topics_and_semantic_map(keywords):
-    """Generate topics and semantic distribution based on keywords."""
-    topic_relevance = [
-        {"Topic": "Fashion", "Relevance": 90},
-        {"Topic": "Online Shopping", "Relevance": 85},
-        {"Topic": "Women's Apparel", "Relevance": 80},
-        {"Topic": "Men's Apparel", "Relevance": 75},
-        {"Topic": "Elevating Style", "Relevance": 70}
-    ]
-    semantic_map = [
-        {"Topic": "Fashion Trends", "Frequency": 5},
-        {"Topic": "Clothing Lines", "Frequency": 4},
-        {"Topic": "Style Improvement", "Frequency": 3}
-    ]
-    return pd.DataFrame(topic_relevance), pd.DataFrame(semantic_map)
+        # Extract metadata
+        title = soup.title.string if soup.title else "No Title Found"
+        meta_description = (
+            soup.find("meta", {"name": "description"})["content"]
+            if soup.find("meta", {"name": "description"})
+            else "No Description Found"
+        )
+        meta_keywords = (
+            soup.find("meta", {"name": "keywords"})["content"].split(",")
+            if soup.find("meta", {"name": "keywords"})
+            else []
+        )
 
-# Render Content Gaps and Recommendations
-def render_content_gaps_and_recommendations():
-    """Display content gaps and actionable content recommendations."""
-    st.markdown("### Content Gaps")
-    st.write("- More Detailed Product Descriptions")
-    st.write("- SEO-Friendly Phrases")
-    st.write("- Reviews Section")
+        # Extract visible text
+        visible_text = " ".join(soup.stripped_strings)[:1000]  # Limit to 1000 chars
+        return {
+            "title": title,
+            "meta_description": meta_description,
+            "meta_keywords": meta_keywords,
+            "visible_text": visible_text,
+        }
+    except Exception as e:
+        return {"error": f"Error analyzing webpage: {str(e)}"}
 
-    st.markdown("### Metadata Improvement Suggestions")
-    st.write("**Suggested Title:** ZafiroTrend: Exclusive and Elegant Fashion")
-    st.write("**Suggested Description:** Unleash your individuality with unique and stylish fashion choices for men and women. Enjoy online shopping with ZafiroTrend. Free shipping and cost-free exchanges.")
+# Map Data to Brand Values and ICP
+def map_to_brand_values_and_icp(content):
+    """Map website content to brand values and ICP."""
+    # Extract mission from content and meta description
+    mission = content[:100] if content else "Deliver exceptional products and services"
+    
+    brand_values = {
+        "mission": mission,
+        "values": ["creativity", "exclusivity", "luxury"],
+        "virtues": ["customer-centricity", "high-quality"],
+        "is_completed": True,
+    }
+    icp_data = {
+        "demographics": {
+            "age_range": "20-40",
+            "interests": ["fashion", "elegance", "luxury"],
+        },
+        "psychographics": {
+            "priorities": ["style", "individuality", "comfort"],
+            "pain_points": ["need for accessible luxury", "lack of quality options"],
+        },
+        "is_completed": True,
+    }
+    return brand_values, icp_data
 
-    st.markdown("### Content Recommendations")
-    st.write("- Include a dedicated About Us page.")
-    st.write("- Add a blog section for fashion tips and brand discussion.")
-    st.write("- Include more product images.")
+# Calculate Archetype Alignment
+def calculate_archetype_scores(meta_keywords):
+    """Match keywords to archetypes and calculate scores."""
+    archetypes = {"Autonomous": 0, "Impulsive": 0, "Avoidant": 0}
+    keyword_map = {
+        "efficiency": "Autonomous",
+        "growth": "Autonomous",
+        "luxury": "Impulsive",
+        "trendy": "Impulsive",
+        "comfort": "Avoidant",
+        "relaxation": "Avoidant",
+    }
+    for keyword in meta_keywords:
+        keyword = keyword.lower()
+        if keyword in keyword_map:
+            archetypes[keyword_map[keyword]] += 10
 
-# Export Analysis
-def export_analysis(data):
-    """Allow users to download the analysis as a JSON report."""
-    import json
-    st.download_button(
-        label="Download Analysis Report",
-        data=json.dumps(data, indent=4),
-        file_name="seo_analysis.json",
-        mime="application/json"
-    )
+    total = sum(archetypes.values())
+    return {
+        archetype: round(score / total * 100, 2) if total > 0 else 0
+        for archetype, score in archetypes.items()
+    }
 
-# Render Archetype and Topic Analysis
-def render_archetype_and_topics(analysis):
-    """Display archetype alignment, content topics, and semantic map."""
-    st.markdown("### Content Topics")
-    keywords = analysis.get('keywords', [])
-    topics, semantic_map = generate_topics_and_semantic_map(keywords)
-
-    # Topic Relevance Chart
-    fig = px.bar(
-        topics, x='Topic', y='Relevance', 
-        title="Topic Relevance Analysis", 
-        color='Topic', color_discrete_sequence=px.colors.qualitative.Set2
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Semantic Map
-    st.markdown("### Semantic Topic Map")
-    fig = px.pie(
-        semantic_map, names='Topic', values='Frequency',
-        title="Semantic Topic Distribution",
-        color_discrete_sequence=px.colors.sequential.RdBu
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-# Main SEO Analysis Function
-def render_seo_analysis_details(analysis):
-    """Display detailed SEO analysis with archetype recommendations."""
-    st.markdown(f"### Analysis Results for: {urlparse(st.session_state.webpage_analysis['url']).netloc}")
-
-    # Detect Language
-    page_text = analysis.get('content', '')
-    language = detect_language(page_text)
-
-    # Metadata Display
-    st.markdown("#### Current Metadata")
-    st.write(f"**Current Title:** {analysis.get('title', 'Not available')}")
-    st.write(f"**Current Meta Description:** {analysis.get('meta_description', 'Not available')}")
-    st.write(f"**Current Meta Keywords:** {', '.join(analysis.get('meta_keywords', [])) or 'Not available'}")
-
-    # Render Archetype Analysis
-    render_archetype_and_topics(analysis)
-
-    # Render Content Gaps and Recommendations
-    render_content_gaps_and_recommendations()
-
-    # Export Results
-    st.markdown("### Export Analysis")
-    export_analysis(analysis)
-
-# Main SEO Analyzer Function
+# Render SEO Analysis
 def render_seo_analyzer():
-    """Main function to render SEO Analyzer."""
+    """Render the SEO analyzer interface."""
     initialize_session_state()
 
-    # Input for URL
     st.image("assets/logoclio.png", width=100)
     st.markdown("## Website Analysis")
-    st.markdown("Let's analyze your website to optimize its SEO performance.")
+    st.markdown("Analyze your website to optimize its SEO performance and gather insights for Brand Values and ICP.")
 
-    url = st.text_input(
-        "Enter your website URL",
-        value=st.session_state.webpage_analysis.get('url', ''),
-        placeholder="https://example.com",
-        help="Enter the full URL including https://"
-    )
+    url = st.text_input("Enter your website URL", placeholder="https://example.com")
 
     if st.button("Analyze Website"):
-        if url:
-            if not url.startswith(('http://', 'https://')):
-                st.error("Please enter a valid URL starting with http:// or https://")
-            else:
-                with st.spinner("Analyzing your website..."):
-                    try:
-                        analysis = analyze_webpage(url)
-                        if "error" in analysis:
-                            st.error(f"Error analyzing webpage: {analysis['error']}")
-                        else:
-                            st.session_state.webpage_analysis.update({
-                                'url': url,
-                                'analysis': analysis,
-                                'is_completed': True
-                            })
-                            render_seo_analysis_details(analysis)
-                    except Exception as e:
-                        st.error(f"An error occurred during analysis: {str(e)}")
+        if url and urlparse(url).scheme in ["http", "https"]:
+            with st.spinner("Analyzing your website..."):
+                # Step 1: Extract website data
+                analysis = analyze_webpage(url)
+                if "error" in analysis:
+                    st.error(analysis["error"])
+                else:
+                    # Step 2: Map data to Brand Values and ICP
+                    brand_values, icp_data = map_to_brand_values_and_icp(analysis["visible_text"])
+
+                    # Step 3: Calculate archetype alignment
+                    archetype_scores = calculate_archetype_scores(analysis["meta_keywords"])
+
+                    # Step 4: Update session state
+                    st.session_state.webpage_analysis.update({
+                        "url": url,
+                        "brand_values": brand_values,
+                        "icp_data": icp_data,
+                        "archetype_scores": archetype_scores,
+                        "is_completed": True,
+                    })
+
+                    st.success("SEO Analysis completed successfully!")
+                    render_results()
+
         else:
-            st.warning("Please enter a URL.")
+            st.warning("Please enter a valid URL.")
+
+def render_results():
+    """Display the analysis results."""
+    st.markdown("### Brand Values Updated")
+    st.json(st.session_state.webpage_analysis["brand_values"])
+
+    st.markdown("### ICP Data Updated")
+    st.json(st.session_state.webpage_analysis["icp_data"])
+
+    st.markdown("### Archetype Scores")
+    scores = st.session_state.webpage_analysis["archetype_scores"]
+    st.bar_chart(pd.DataFrame(list(scores.items()), columns=["Archetype", "Score"]))
 
 # Run the App
 if __name__ == "__main__":
