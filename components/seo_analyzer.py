@@ -1,3 +1,4 @@
+
 import streamlit as st
 from urllib.parse import urlparse
 import requests
@@ -6,7 +7,6 @@ import pandas as pd
 import re
 from collections import Counter
 
-# Initialize Session State
 def initialize_session_state():
     """Initialize the session state for SEO analyzer."""
     if "webpage_analysis" not in st.session_state:
@@ -19,7 +19,6 @@ def initialize_session_state():
             "is_completed": False,
         }
 
-# Extract Website Data
 def analyze_webpage(url):
     """Scrape the website and extract metadata and content."""
     try:
@@ -35,40 +34,10 @@ def analyze_webpage(url):
         meta_keywords = soup.find("meta", {"name": "keywords"})
         meta_keywords = meta_keywords["content"].split(",") if meta_keywords else []
 
-        # Extract headings for semantic relevance
-
-def calculate_archetype_scores(meta_keywords, visible_text):
-    """Calculate archetype alignment scores based on keywords and content."""
-    scores = {
-        "Autonomous": 0,
-        "Impulsive": 0,
-        "Isolative": 0,
-        "Avoidant": 0
-    }
-    
-    # Combine keywords and text for analysis
-    content = " ".join(meta_keywords).lower() + " " + visible_text.lower()
-    
-    # Keyword mappings for archetypes
-    archetype_keywords = {
-        "Autonomous": ["efficiency", "growth", "success", "professional", "achievement"],
-        "Impulsive": ["quick", "easy", "instant", "new", "trending"],
-        "Isolative": ["privacy", "security", "independent", "personal"],
-        "Avoidant": ["comfort", "escape", "relax", "dream"]
-    }
-    
-    # Calculate scores based on keyword frequency
-    for archetype, keywords in archetype_keywords.items():
-        for keyword in keywords:
-            scores[archetype] += content.count(keyword) * 10
-            
-    return scores
-
-
+        # Extract headings and visible text
         headings = [h.get_text(strip=True) for h in soup.find_all(re.compile("^h[1-6]$"))]
-
-        # Extract visible text
         visible_text = " ".join(soup.stripped_strings)[:2000]  # Limit to 2000 chars
+
         return {
             "title": title,
             "meta_description": meta_description,
@@ -79,23 +48,41 @@ def calculate_archetype_scores(meta_keywords, visible_text):
     except Exception as e:
         return {"error": f"Error analyzing webpage: {str(e)}"}
 
-# Map Data to Brand Values and ICP
+def calculate_archetype_scores(meta_keywords, visible_text):
+    """Calculate archetype alignment scores based on keywords and content."""
+    scores = {
+        "Autonomous": 0,
+        "Impulsive": 0,
+        "Isolative": 0,
+        "Avoidant": 0
+    }
+    
+    content = " ".join(meta_keywords).lower() + " " + visible_text.lower()
+    
+    archetype_keywords = {
+        "Autonomous": ["efficiency", "growth", "success", "professional", "achievement"],
+        "Impulsive": ["quick", "easy", "instant", "new", "trending"],
+        "Isolative": ["privacy", "security", "independent", "personal"],
+        "Avoidant": ["comfort", "escape", "relax", "dream"]
+    }
+    
+    for archetype, keywords in archetype_keywords.items():
+        for keyword in keywords:
+            scores[archetype] += content.count(keyword) * 10
+            
+    return scores
+
 def map_to_brand_values_and_icp(content, meta_description, headings):
     """Map website content to dynamic brand values and ICP."""
-    # Tokenize and clean words
     words = re.findall(r'\w+', content.lower())
     stopwords = {"and", "the", "for", "with", "from", "this", "that", "your", "como"}
     filtered_words = [word for word in words if word not in stopwords and len(word) > 3]
     word_freq = Counter(filtered_words)
 
-    # Extract mission from meta description or headings
     mission = meta_description if meta_description != "No Description Found" else " ".join(headings[:3])
-
-    # Get top keywords
     top_keywords = [word for word, count in word_freq.most_common(5)]
-
-    # Derive priorities and pain points from content
     priorities = [heading for heading in headings[:3]]
+    
     pain_points = []
     negative_indicators = ["without", "lacks", "needs", "problem", "difficult"]
     for indicator in negative_indicators:
@@ -124,7 +111,6 @@ def map_to_brand_values_and_icp(content, meta_description, headings):
     
     return brand_values, icp_data
 
-# Generate Recommendations
 def generate_recommendations(archetype_scores):
     """Generate campaign ideas and recommendations."""
     recommendations = []
@@ -136,7 +122,6 @@ def generate_recommendations(archetype_scores):
         recommendations.append("Focus on relaxation and convenience ('Hassle-Free Shopping Experience').")
     return recommendations
 
-# Render Results
 def render_results():
     """Display the analysis results."""
     st.markdown("### Brand Values Updated")
@@ -154,7 +139,6 @@ def render_results():
     for rec in recommendations:
         st.write(f"- {rec}")
 
-# Main SEO Analyzer Function
 def render_seo_analyzer():
     """Main function to render SEO Analyzer."""
     initialize_session_state()
@@ -168,25 +152,23 @@ def render_seo_analyzer():
     if st.button("Analyze Website"):
         if url and urlparse(url).scheme in ["http", "https"]:
             with st.spinner("Analyzing your website..."):
-                # Step 1: Extract website data
                 analysis = analyze_webpage(url)
                 if "error" in analysis:
                     st.error(analysis["error"])
                 else:
-                    # Step 2: Map data to Brand Values and ICP
                     brand_values, icp_data = map_to_brand_values_and_icp(
                         analysis["visible_text"],
                         analysis["meta_description"],
                         analysis["headings"],
                     )
 
-                    # Step 3: Calculate archetype alignment
-                    archetype_scores = calculate_archetype_scores(analysis["meta_keywords"], analysis["visible_text"])
+                    archetype_scores = calculate_archetype_scores(
+                        analysis["meta_keywords"],
+                        analysis["visible_text"]
+                    )
 
-                    # Step 4: Generate recommendations
                     recommendations = generate_recommendations(archetype_scores)
 
-                    # Step 5: Update session state
                     st.session_state.webpage_analysis.update({
                         "url": url,
                         "brand_values": brand_values,
@@ -201,6 +183,5 @@ def render_seo_analyzer():
         else:
             st.warning("Please enter a valid URL.")
 
-# Run the App
 if __name__ == "__main__":
     render_seo_analyzer()
