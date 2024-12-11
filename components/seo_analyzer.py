@@ -258,3 +258,23 @@ def render_seo_analyzer():
                     render_results()
         else:
             st.warning("Please enter a valid URL.")
+
+def render_results():
+    """Display the SEO analysis results."""
+    if st.session_state.webpage_analysis["is_completed"]:
+        # Display Brand Values
+        st.subheader("Brand Values")
+        st.json(st.session_state.webpage_analysis["brand_values"])
+        
+        # Display ICP Data
+        st.subheader("Ideal Customer Profile")
+        st.json(st.session_state.webpage_analysis["icp_data"])
+        
+        # Display Archetype Scores
+        st.subheader("Archetype Scores")
+        st.json(st.session_state.webpage_analysis["archetype_scores"])
+        
+        # Display Recommendations
+        st.subheader("Recommendations")
+        for rec in st.session_state.webpage_analysis["recommendations"]:
+            st.write("•", rec)
