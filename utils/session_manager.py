@@ -1,6 +1,18 @@
 import streamlit as st
 from typing import Optional, Any, Dict, List
 
+def initialize_session_state():
+    """Initialize session state variables if they don't exist"""
+    if 'webpage_analysis' not in st.session_state:
+        st.session_state.webpage_analysis = {
+            'url': '',
+            'brand_values': {},
+            'icp_data': {},
+            'archetype_scores': {},
+            'recommendations': [],
+            'is_completed': False
+        }
+
 def initialize_user_session(user_id: str):
     """Initialize user-specific session state variables."""
     prefix = f"user_{user_id}_"
