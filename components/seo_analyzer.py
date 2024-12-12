@@ -20,10 +20,11 @@ import re
 # Initialize NLTK components
 try:
     nltk.data.find('tokenizers/punkt')
-    nltk.data.find('stopwords')
+    nltk.data.find('corpora/stopwords')
 except LookupError:
-    nltk.download('punkt')
-    nltk.download('stopwords')
+    nltk.download('punkt', quiet=True)
+    nltk.download('stopwords', quiet=True)
+    nltk.download('punkt_tab', quiet=True)
 
 class DynamicContentAnalyzer:
     def __init__(self):
