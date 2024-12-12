@@ -202,6 +202,39 @@ def generate_recommendations(brand_values, archetype_scores, structure):
             "Create emotional storytelling content highlighting unique value propositions"
         )
     
+
+def render_brand_values_card(brand_values):
+    """Render a card displaying brand values"""
+    st.markdown("### 🎯 Brand Values")
+    
+    if brand_values.get("mission"):
+        st.markdown("**Mission:**")
+        st.write(brand_values["mission"])
+    
+    if brand_values.get("values"):
+        st.markdown("**Core Values:**")
+        st.write(", ".join(brand_values["values"]))
+        
+    if brand_values.get("virtues"):
+        st.markdown("**Brand Virtues:**")
+        st.write(", ".join(brand_values["virtues"]))
+
+def render_icp_card(icp_data):
+    """Render a card displaying ICP data"""
+    st.markdown("### 👥 Ideal Customer Profile")
+    
+    if "demographics" in icp_data:
+        st.markdown("**Demographics:**")
+        st.write(f"Age Range: {icp_data['demographics']['age_range']}")
+        st.write(f"Interests: {', '.join(icp_data['demographics']['interests'])}")
+    
+    if "psychographics" in icp_data:
+        st.markdown("**Psychographics:**")
+        if icp_data["psychographics"].get("priorities"):
+            st.write("Priorities:", ", ".join(icp_data["psychographics"]["priorities"]))
+        if icp_data["psychographics"].get("pain_points"):
+            st.write("Pain Points:", ", ".join(icp_data["psychographics"]["pain_points"]))
+
     if archetype_scores["Avoidant"] > 30:
         recommendations.append(
             "Focus on simplifying content and emphasizing reliability"
