@@ -6,6 +6,8 @@ from components.marketing_recommendations import render_marketing_recommendation
 from auth import is_authenticated
 from auth_pages import render_auth_pages  # Import from correct module
 
+from components.recommendation_executor import render_recommendation_executor
+
 def main():
     """Main function for the AI Marketing Assistant."""
     st.set_page_config(
@@ -33,6 +35,8 @@ def main():
     # Route based on user selection
     if choice == "SEO Analyzer":
         render_seo_analyzer()
+        if 'webpage_analysis' in st.session_state and st.session_state.webpage_analysis.get("is_completed"):
+            render_recommendation_executor()
     elif choice == "Data Input":
         render_data_input()
     elif choice == "Archetype Alignment":
