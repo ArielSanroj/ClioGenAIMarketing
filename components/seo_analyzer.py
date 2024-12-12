@@ -1,113 +1,33 @@
 
 import streamlit as st
 from urllib.parse import urlparse
-from utils.session_manager import initialize_session_state
 import requests
+from utils.session_manager import initialize_session_state
 from bs4 import BeautifulSoup
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from textblob import TextBlob
-from sklearn.feature_extraction.text import TfidfVectorizer
-import numpy as np
-import nltk
-from nltk.tokenize import sent_tokenize, word_tokenize
-from nltk.corpus import stopwords
-from nltk.collocations import BigramAssocMeasures, BigramCollocationFinder
-from collections import Counter
 import re
+from collections import Counter
+from langdetect import detect
 
-# Initialize NLTK components
-try:
-    nltk.data.find('tokenizers/punkt')
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('punkt', quiet=True)
-    nltk.download('stopwords', quiet=True)
-    nltk.download('punkt_tab', quiet=True)
+def detect_language(text):
+    try:
+        return detect(text)
+    except:
+        return 'en'  # Default to English if detection fails
 
-class DynamicContentAnalyzer:
-    def __init__(self):
-        self.vectorizer = TfidfVectorizer(stop_words='english')
-        
-    def extract_key_topics(self, text, num_topics=5):
-        try:
-            tfidf_matrix = self.vectorizer.fit_transform([text])
-            feature_names = self.vectorizer.get_feature_names_out()
-            scores = zip(feature_names, tfidf_matrix.toarray()[0])
-            sorted_scores = sorted(scores, key=lambda x: x[1], reverse=True)
-            return [term for term, score in sorted_scores[:num_topics]]
-
-def render_archetype_chart(archetype_scores):
-    """Generate a plotly chart for archetype scores"""
-    fig = go.Figure(data=[
-        go.Bar(
-            x=list(archetype_scores.keys()),
-            y=list(archetype_scores.values()),
-            marker_color='rgb(26, 118, 255)'
-        )
-    ])
-    
-    fig.update_layout(
-        title="Archetype Distribution",
-        xaxis_title="Archetype",
-        yaxis_title="Score (%)",
-        yaxis_range=[0, 100],
-        showlegend=False
-    )
-    
-    return fig
-
-
-        except:
-            return []
-
-    def analyze_content_structure(self, soup):
-        structure = {
-            'main_sections': [],
-            'key_elements': [],
-            'interaction_points': [],
-            'value_propositions': []
+def get_stopwords(language):
+    if language == 'es':
+        return {
+            "y", "el", "la", "los", "las", "un", "una", "unos", "unas", "de", "del", "para", 
+            "por", "con", "sin", "sobre", "entre", "detrás", "después", "esto", "esta", "que"
         }
-        
-        for tag in soup.find_all(['h1', 'h2', 'h3']):
-            text = tag.get_text(strip=True)
-            if text:
-                context = " ".join([s.get_text() for s in tag.find_all_next(['p', 'div'])[:2]])
-                sentiment = TextBlob(text + " " + context).sentiment
-                structure['main_sections'].append({
-                    'text': text,
-                    'sentiment': sentiment.polarity,
-                    'importance': sentiment.subjectivity
-                })
-
-        for elem in soup.find_all(['p', 'div']):
-            text = elem.get_text(strip=True)
-            if len(text) > 50:
-                sentiment = TextBlob(text).sentiment
-                if abs(sentiment.polarity) > 0.3:
-                    structure['key_elements'].append({
-                        'text': text,
-                        'sentiment': sentiment.polarity,
-                        'importance': sentiment.subjectivity
-                    })
-
-        return structure
-
-    def extract_semantic_relationships(self, text):
-        relationships = []
-        sentences = sent_tokenize(text)
-        
-        for sentence in sentences:
-            doc = TextBlob(sentence)
-            if doc.sentiment.polarity != 0:
-                relationships.append({
-                    'text': sentence,
-                    'sentiment': doc.sentiment.polarity,
-                    'concepts': self.extract_key_topics(sentence, 2)
-                })
-        
-        return relationships
+    else:  # English default
+        return {
+            "and", "the", "for", "with", "from", "this", "that", "your", "our", "their",
+            "we", "are", "has", "have", "been", "would", "could", "should", "will"
+        }
 
 def analyze_webpage(url):
     try:
@@ -115,254 +35,282 @@ def analyze_webpage(url):
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
-        
-        analyzer = DynamicContentAnalyzer()
-        
-        text_content = " ".join([text for text in soup.stripped_strings 
-                               if any(c.isalpha() for c in text)])
-        
-        # Extract key topics
-        key_topics = analyzer.extract_key_topics(text_content)
-        
-        # Analyze content structure
-        structure = analyzer.analyze_content_structure(soup)
-        
-        # Extract semantic relationships
-        relationships = analyzer.extract_semantic_relationships(text_content)
-        
-        # Calculate dynamic archetype scores
-        archetype_scores = calculate_dynamic_archetypes(structure, relationships)
-        
-        # Generate brand values and ICP data
-        brand_values = generate_brand_values(key_topics, structure, relationships)
-        icp_data = generate_icp_data(structure, relationships, key_topics)
-        
-        # Generate recommendations
-        recommendations = generate_recommendations(brand_values, archetype_scores, structure)
-        
+
+        visible_text = " ".join([text for text in soup.stripped_strings 
+                               if any(c.isalpha() for c in text)])[:3000]
+        language = detect_language(visible_text)
+        title = soup.title.string if soup.title else ""
+        meta_description = soup.find("meta", {"name": "description"})
+        meta_description = meta_description["content"] if meta_description else ""
+
+        meta_keywords = []
+        keywords_meta = soup.find("meta", {"name": re.compile(r"keywords", re.I)})
+        if keywords_meta and keywords_meta.get("content"):
+            meta_keywords = [k.strip() for k in keywords_meta["content"].split(",")]
+
+        headings = []
+        for tag in soup.find_all(re.compile("^h[1-6]$")):
+            text = tag.get_text(strip=True)
+            if text and any(c.isalpha() for c in text):
+                headings.append(text)
+
         return {
-            "url": url,
-            "brand_values": brand_values,
-            "icp_data": icp_data,
-            "archetype_scores": archetype_scores,
-            "recommendations": recommendations,
-            "is_completed": True
+            "title": title,
+            "meta_description": meta_description,
+            "meta_keywords": meta_keywords,
+            "headings": headings,
+            "visible_text": visible_text,
+            "language": language
         }
-        
     except Exception as e:
         return {"error": f"Error analyzing webpage: {str(e)}"}
 
-def calculate_dynamic_archetypes(structure, relationships):
-    scores = {"Autonomous": 0, "Impulsive": 0, "Avoidant": 0}
-    
-    # Analyze content sentiment and structure
-    for element in structure['key_elements']:
-        if element['sentiment'] > 0.3:
-            scores["Autonomous"] += 1
-        elif element['sentiment'] < -0.3:
-            scores["Avoidant"] += 1
-        else:
-            scores["Impulsive"] += 0.5
-    
-    # Analyze semantic relationships
-    for rel in relationships:
-        if rel['sentiment'] > 0.3:
-            scores["Autonomous"] += 0.5
-        elif rel['sentiment'] < -0.3:
-            scores["Avoidant"] += 0.5
-    
-    total = sum(scores.values()) or 1
-    return {k: round(v/total * 100, 2) for k, v in scores.items()}
+def get_pain_point_indicators(language):
+    if language == 'es':
+        return ["sin", "falta", "necesita", "difícil", "problema", "busca", "quiere"]
+    else:
+        return ["without", "lack", "need", "difficult", "problem", "looking", "want"]
 
-def generate_brand_values(key_topics, structure, relationships):
-    positive_elements = [elem for elem in structure['key_elements'] 
-                        if elem['sentiment'] > 0]
-    
-    mission = positive_elements[0]['text'] if positive_elements else ""
-    values = key_topics[:3]
-    virtues = [elem['text'] for elem in sorted(positive_elements, 
-                                             key=lambda x: x['importance'], 
-                                             reverse=True)[:2]]
-    
-    return {
-        "mission": mission,
-        "values": values,
-        "virtues": virtues,
-        "is_completed": True
+def get_keyword_map(language):
+    if language == 'es':
+        return {
+            "eficiencia": "Autonomous",
+            "calidad": "Autonomous",
+            "profesional": "Autonomous",
+            "lujo": "Impulsive",
+            "elegancia": "Impulsive",
+            "exclusivo": "Impulsive",
+            "comodidad": "Avoidant",
+            "fácil": "Avoidant",
+            "simple": "Avoidant"
+        }
+    else:
+        return {
+            "efficiency": "Autonomous",
+            "quality": "Autonomous",
+            "professional": "Autonomous",
+            "luxury": "Impulsive",
+            "elegance": "Impulsive",
+            "exclusive": "Impulsive",
+            "comfort": "Avoidant",
+            "easy": "Avoidant",
+            "simple": "Avoidant"
+        }
+
+def map_to_brand_values_and_icp(content, meta_description, headings, language):
+    stopwords = get_stopwords(language)
+    words = re.findall(r'\w+', content.lower())
+    filtered_words = [word for word in words if word not in stopwords and len(word) > 3]
+    word_freq = Counter(filtered_words)
+    mission = meta_description if meta_description else (headings[0] if headings else "")
+    values = [word for word, _ in word_freq.most_common(5) if word not in stopwords][:3]
+
+    if language == 'es':
+        virtue_keywords = ["calidad", "diseño", "estilo", "elegancia"]
+        default_virtues = ["Calidad Premium", "Diseño Exclusivo"]
+        default_interests = ["moda", "estilo", "tendencias"]
+    else:
+        virtue_keywords = ["quality", "design", "style", "elegance"]
+        default_virtues = ["Premium Quality", "Exclusive Design"]
+        default_interests = ["fashion", "style", "trends"]
+
+    virtues = []
+    for heading in headings:
+        if any(word in heading.lower() for word in virtue_keywords):
+            virtues.append(heading)
+    if not virtues:
+        virtues = default_virtues
+
+    demographics = {
+        "age_range": "25-45",
+        "interests": values[:3] if values else default_interests
     }
 
-def generate_icp_data(structure, relationships, key_topics):
-    pain_points = [elem['text'] for elem in structure['key_elements'] 
-                  if elem['sentiment'] < -0.2][:3]
-    
-    priorities = [rel['text'] for rel in relationships 
-                 if rel['sentiment'] > 0.2][:3]
-    
-    return {
-        "demographics": {
-            "age_range": "25-45",
-            "interests": key_topics[:3]
-        },
-        "psychographics": {
-            "priorities": priorities,
-            "pain_points": pain_points
-        },
-        "is_completed": True
+    psychographics = {
+        "priorities": virtues[:3],
+        "pain_points": extract_pain_points(content, language)
     }
 
-def generate_recommendations(brand_values, archetype_scores, structure):
-    recommendations = []
+    return {
+        "brand_values": {
+            "mission": mission,
+            "values": values,
+            "virtues": virtues[:2],
+            "is_completed": True
+        },
+        "icp_data": {
+            "demographics": demographics,
+            "psychographics": psychographics,
+            "is_completed": True
+        }
+    }
+
+def extract_pain_points(content, language):
+    pain_indicators = get_pain_point_indicators(language)
+    pain_points = []
+
+    for sentence in content.split("."):
+        if any(indicator in sentence.lower() for indicator in pain_indicators):
+            cleaned = sentence.strip()
+            if len(cleaned) > 10:
+                pain_points.append(cleaned)
+
+    if not pain_points:
+        return ["No specific pain points detected"] if language == 'en' else ["No se detectaron puntos de dolor específicos"]
+
+    return pain_points[:3]
+
+def calculate_archetype_scores(meta_keywords, content, language):
+    keyword_map = get_keyword_map(language)
+    archetypes = {"Autonomous": 0, "Impulsive": 0, "Avoidant": 0}
+
+    words = re.findall(r'\w+', content.lower())
+    for word in words:
+        if word in keyword_map:
+            archetypes[keyword_map[word]] += 1
+
+    for keyword in meta_keywords:
+        keyword = keyword.lower().strip()
+        if keyword in keyword_map:
+            archetypes[keyword_map[keyword]] += 2
+
+    total = sum(archetypes.values()) or 1
+    return {k: round(v / total * 100, 2) for k, v in archetypes.items()}
+
+def generate_recommendations(archetype_scores, language):
+    if language == 'es':
+        recommendations = []
+        if archetype_scores.get("Autonomous", 0) > 30:
+            recommendations.append("Destaca la funcionalidad y calidad premium ('Diseñado para la Excelencia').")
+        if archetype_scores.get("Impulsive", 0) > 30:
+            recommendations.append("Resalta la exclusividad y el lujo a través de historias aspiracionales ('Elegancia Moderna para Ti').")
+        if archetype_scores.get("Avoidant", 0) > 30:
+            recommendations.append("Enfócate en la comodidad y facilidad de compra ('Experiencia de Compra Sin Complicaciones').")
+        return recommendations or ["Personaliza tu estrategia de marketing basada en los valores de marca identificados."]
+    else:
+        recommendations = []
+        if archetype_scores.get("Autonomous", 0) > 30:
+            recommendations.append("Highlight functionality and premium quality ('Designed for Excellence').")
+        if archetype_scores.get("Impulsive", 0) > 30:
+            recommendations.append("Emphasize exclusivity and luxury through aspirational storytelling ('Modern Elegance for You').")
+        if archetype_scores.get("Avoidant", 0) > 30:
+            recommendations.append("Focus on comfort and easy shopping experience ('Hassle-Free Shopping Experience').")
+        return recommendations or ["Customize your marketing strategy based on identified brand values."]
+
+def render_archetype_chart(archetype_scores):
+    df_archetypes = pd.DataFrame({
+        'Archetype': list(archetype_scores.keys()),
+        'Score': list(archetype_scores.values())
+    })
     
-    # Generate recommendations based on content analysis
-    if archetype_scores["Autonomous"] > 30:
-        recommendations.append(
-            f"Enhance thought leadership content around {', '.join(brand_values['values'][:2])}"
-        )
+    fig = px.bar(df_archetypes, 
+                x='Archetype', 
+                y='Score',
+                title='Archetype Distribution',
+                color='Score',
+                color_continuous_scale='Viridis')
     
-    if archetype_scores["Impulsive"] > 30:
-        recommendations.append(
-            "Create emotional storytelling content highlighting unique value propositions"
-        )
+    fig.update_layout(
+        height=400,
+        margin=dict(t=30, b=0, l=0, r=0)
+    )
     
+    return fig
 
 def render_brand_values_card(brand_values):
-    """Render a card displaying brand values"""
     st.markdown("### 🎯 Brand Values")
     
-    if brand_values.get("mission"):
-        st.markdown("**Mission:**")
-        st.write(brand_values["mission"])
+    col1, col2 = st.columns(2)
     
-    if brand_values.get("values"):
-        st.markdown("**Core Values:**")
-        st.write(", ".join(brand_values["values"]))
+    with col1:
+        st.markdown("**Mission:**")
+        st.info(brand_values.get("mission", "N/A"))
         
+    with col2:
+        st.markdown("**Core Values:**")
+        for value in brand_values.get("values", []):
+            st.markdown(f"- {value}")
+            
     if brand_values.get("virtues"):
         st.markdown("**Brand Virtues:**")
-        st.write(", ".join(brand_values["virtues"]))
+        for virtue in brand_values.get("virtues", []):
+            st.markdown(f"- {virtue}")
 
-def render_icp_card(icp_data, archetype_scores=None):
-    """Render a card displaying ICP data"""
+def render_icp_card(icp_data):
     st.markdown("### 👥 Ideal Customer Profile")
     
-    recommendations = []
+    col1, col2 = st.columns(2)
     
-    if "demographics" in icp_data:
+    with col1:
         st.markdown("**Demographics:**")
-        st.write(f"Age Range: {icp_data['demographics']['age_range']}")
-        st.write(f"Interests: {', '.join(icp_data['demographics']['interests'])}")
-    
-    if "psychographics" in icp_data:
+        st.markdown(f"Age Range: {icp_data['demographics'].get('age_range', 'N/A')}")
+        
+        st.markdown("**Interests:**")
+        for interest in icp_data['demographics'].get('interests', []):
+            st.markdown(f"- {interest}")
+            
+    with col2:
         st.markdown("**Psychographics:**")
-        if icp_data["psychographics"].get("priorities"):
-            st.write("Priorities:", ", ".join(icp_data["psychographics"]["priorities"]))
-        if icp_data["psychographics"].get("pain_points"):
-            st.write("Pain Points:", ", ".join(icp_data["psychographics"]["pain_points"]))
+        
+        st.markdown("*Priorities:*")
+        for priority in icp_data['psychographics'].get('priorities', []):
+            st.markdown(f"- {priority}")
+            
+        st.markdown("*Pain Points:*")
+        for point in icp_data['psychographics'].get('pain_points', []):
+            st.markdown(f"- {point}")
 
-    if archetype_scores and archetype_scores.get("Avoidant", 0) > 30:
-        recommendations.append(
-            "Focus on simplifying content and emphasizing reliability"
-        )
+def render_recommendations_card(recommendations):
+    st.markdown("### 💡 Strategic Recommendations")
     
-    return recommendations if recommendations else [
-        "Customize your marketing strategy based on the identified content patterns"
-    ]
+    for idx, rec in enumerate(recommendations, 1):
+        st.markdown(f"""
+        <div style='padding: 10px; border-left: 3px solid #8e44ad; margin: 10px 0; background-color: #f8f9fa;'>
+            {idx}. {rec}
+        </div>
+        """, unsafe_allow_html=True)
 
 def render_results():
     if st.session_state.webpage_analysis["is_completed"]:
         st.markdown("## 📊 Analysis Results")
         
-        tabs = st.tabs([
-            "Overview", 
-            "Semantic Analysis", 
-            "Industry Insights", 
-            "Competition",
-            "Technical Details"
-        ])
+        tab1, tab2, tab3 = st.tabs(["Brand & Audience", "Detailed Analysis", "Raw Data"])
         
-        with tabs[0]:
-            render_overview()
+        with tab1:
+            st.plotly_chart(
+                render_archetype_chart(st.session_state.webpage_analysis["archetype_scores"]),
+                use_container_width=True
+            )
             
-        with tabs[1]:
-            render_semantic_analysis()
+            col1, col2 = st.columns(2)
+            with col1:
+                render_brand_values_card(st.session_state.webpage_analysis["brand_values"])
+            with col2:
+                render_icp_card(st.session_state.webpage_analysis["icp_data"])
             
-        with tabs[2]:
-            render_industry_insights()
+            render_recommendations_card(st.session_state.webpage_analysis["recommendations"])
             
-        with tabs[3]:
-            render_competitive_analysis()
+        with tab2:
+            st.subheader("Brand Values")
+            st.json(st.session_state.webpage_analysis["brand_values"])
             
-        with tabs[4]:
-            render_technical_details()
-
-def render_overview():
-    col1, col2 = st.columns(2)
-    with col1:
-        render_brand_values_card(st.session_state.webpage_analysis["brand_values"])
-    with col2:
-        render_icp_card(st.session_state.webpage_analysis["icp_data"], st.session_state.webpage_analysis["archetype_scores"])
-    
-    st.plotly_chart(
-        render_archetype_chart(st.session_state.webpage_analysis["archetype_scores"]),
-        use_container_width=True
-    )
-
-def render_semantic_analysis():
-    st.markdown("### 🔍 Semantic Analysis")
-    analyzer = DynamicContentAnalyzer()
-    
-    if "webpage_analysis" in st.session_state:
-        analysis = st.session_state.webpage_analysis
+            st.subheader("Ideal Customer Profile")
+            st.json(st.session_state.webpage_analysis["icp_data"])
+            
+            st.subheader("Archetype Scores")
+            st.json(st.session_state.webpage_analysis["archetype_scores"])
         
-        # Display key topics
-        st.markdown("#### Key Topics")
-        st.write(analysis["brand_values"]["values"])
-        
-        # Display sentiment distribution
-        st.markdown("#### Content Sentiment")
-        if "key_elements" in analysis:
-            sentiments = [elem["sentiment"] for elem in analysis["key_elements"]]
-            fig = px.histogram(sentiments, title="Content Sentiment Distribution")
-            st.plotly_chart(fig)
-
-def render_industry_insights():
-    st.markdown("### 🎯 Industry Insights")
-    if "webpage_analysis" in st.session_state:
-        analysis = st.session_state.webpage_analysis
-        
-        # Display value propositions
-        st.markdown("#### Value Propositions")
-        st.write(analysis["brand_values"]["virtues"])
-        
-        # Display market positioning
-        st.markdown("#### Market Positioning")
-        st.write(analysis["recommendations"])
-
-def render_competitive_analysis():
-    st.markdown("### 📊 Competitive Analysis")
-    if "webpage_analysis" in st.session_state:
-        analysis = st.session_state.webpage_analysis
-        
-        # Display archetype comparison
-        st.markdown("#### Archetype Distribution")
-        st.plotly_chart(
-            render_archetype_chart(analysis["archetype_scores"]),
-            use_container_width=True
-        )
-
-def render_technical_details():
-    st.markdown("### 🔧 Technical Details")
-    if "webpage_analysis" in st.session_state:
-        st.json(st.session_state.webpage_analysis)
+        with tab3:
+            st.subheader("Raw Analysis Data")
+            st.json(st.session_state.webpage_analysis)
 
 def render_seo_analyzer():
     initialize_session_state()
     st.image("assets/logoclio.png", width=100)
     st.markdown("## Website Analysis")
-    st.markdown("Dynamic content analysis for SEO optimization and brand insights.")
+    st.markdown("Analyze your website to optimize its SEO performance and gather insights for Brand Values and ICP.")
 
     url = st.text_input("Enter your website URL", placeholder="https://example.com")
-    
     if st.button("Analyze Website"):
         if url and urlparse(url).scheme in ["http", "https"]:
             with st.spinner("Analyzing your website..."):
@@ -370,8 +318,30 @@ def render_seo_analyzer():
                 if "error" in analysis:
                     st.error(analysis["error"])
                 else:
-                    st.session_state.webpage_analysis.update(analysis)
-                    st.success("Analysis completed successfully!")
+                    language = analysis.get("language", "en")
+                    results = map_to_brand_values_and_icp(
+                        analysis["visible_text"], 
+                        analysis["meta_description"], 
+                        analysis["headings"],
+                        language
+                    )
+                    archetype_scores = calculate_archetype_scores(
+                        analysis["meta_keywords"], 
+                        analysis["visible_text"],
+                        language
+                    )
+                    recommendations = generate_recommendations(archetype_scores, language)
+
+                    st.session_state.webpage_analysis.update({
+                        "url": url,
+                        "brand_values": results["brand_values"],
+                        "icp_data": results["icp_data"],
+                        "archetype_scores": archetype_scores,
+                        "recommendations": recommendations,
+                        "is_completed": True
+                    })
+
+                    st.success("SEO Analysis completed successfully!")
                     render_results()
         else:
             st.warning("Please enter a valid URL.")
