@@ -37,11 +37,6 @@ class DynamicContentAnalyzer:
             scores = zip(feature_names, tfidf_matrix.toarray()[0])
             sorted_scores = sorted(scores, key=lambda x: x[1], reverse=True)
             return [term for term, score in sorted_scores[:num_topics]]
-        except:
-            return []
-
-    def analyze_content_structure(self, soup):
-        structure = {
 
 def render_archetype_chart(archetype_scores):
     """Generate a plotly chart for archetype scores"""
@@ -64,6 +59,11 @@ def render_archetype_chart(archetype_scores):
     return fig
 
 
+        except:
+            return []
+
+    def analyze_content_structure(self, soup):
+        structure = {
             'main_sections': [],
             'key_elements': [],
             'interaction_points': [],
