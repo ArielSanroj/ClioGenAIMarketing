@@ -42,6 +42,28 @@ class DynamicContentAnalyzer:
 
     def analyze_content_structure(self, soup):
         structure = {
+
+def render_archetype_chart(archetype_scores):
+    """Generate a plotly chart for archetype scores"""
+    fig = go.Figure(data=[
+        go.Bar(
+            x=list(archetype_scores.keys()),
+            y=list(archetype_scores.values()),
+            marker_color='rgb(26, 118, 255)'
+        )
+    ])
+    
+    fig.update_layout(
+        title="Archetype Distribution",
+        xaxis_title="Archetype",
+        yaxis_title="Score (%)",
+        yaxis_range=[0, 100],
+        showlegend=False
+    )
+    
+    return fig
+
+
             'main_sections': [],
             'key_elements': [],
             'interaction_points': [],
