@@ -219,7 +219,7 @@ def render_brand_values_card(brand_values):
         st.markdown("**Brand Virtues:**")
         st.write(", ".join(brand_values["virtues"]))
 
-def render_icp_card(icp_data):
+def render_icp_card(icp_data, archetype_scores=None):
     """Render a card displaying ICP data"""
     st.markdown("### 👥 Ideal Customer Profile")
     
@@ -235,7 +235,7 @@ def render_icp_card(icp_data):
         if icp_data["psychographics"].get("pain_points"):
             st.write("Pain Points:", ", ".join(icp_data["psychographics"]["pain_points"]))
 
-    if archetype_scores["Avoidant"] > 30:
+    if archetype_scores and archetype_scores.get("Avoidant", 0) > 30:
         recommendations.append(
             "Focus on simplifying content and emphasizing reliability"
         )
@@ -276,7 +276,7 @@ def render_overview():
     with col1:
         render_brand_values_card(st.session_state.webpage_analysis["brand_values"])
     with col2:
-        render_icp_card(st.session_state.webpage_analysis["icp_data"])
+        render_icp_card(st.session_state.webpage_analysis["icp_data"], st.session_state.webpage_analysis["archetype_scores"])
     
     st.plotly_chart(
         render_archetype_chart(st.session_state.webpage_analysis["archetype_scores"]),
