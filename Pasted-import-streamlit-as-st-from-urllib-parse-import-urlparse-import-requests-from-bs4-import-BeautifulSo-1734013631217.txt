@@ -1,0 +1,248 @@
+import streamlit as st
+from urllib.parse import urlparse
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import plotly.express as px
+from textblob import TextBlob
+from sklearn.feature_extraction.text import TfidfVectorizer
+from collections import Counter
+import re
+import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+from nltk.collocations import BigramAssocMeasures, BigramCollocationFinder
+
+class DynamicContentAnalyzer:
+    """Analyzes content dynamically without predefined categories"""
+    
+    def __init__(self):
+        self.vectorizer = TfidfVectorizer(stop_words='english')
+        
+    def extract_key_topics(self, text, num_topics=5):
+        """Extract main topics from content using TF-IDF"""
+        try:
+            tfidf_matrix = self.vectorizer.fit_transform([text])
+            feature_names = self.vectorizer.get_feature_names_out()
+            
+            # Get top terms by TF-IDF score
+            scores = zip(feature_names, tfidf_matrix.toarray()[0])
+            sorted_scores = sorted(scores, key=lambda x: x[1], reverse=True)
+            
+            return [term for term, score in sorted_scores[:num_topics]]
+        except:
+            return []
+
+    def analyze_content_structure(self, soup):
+        """Analyze the structure and purpose of the content"""
+        structure = {
+            'main_sections': [],
+            'key_elements': [],
+            'interaction_points': [],
+            'value_propositions': []
+        }
+        
+        # Analyze headings for main sections
+        for tag in soup.find_all(['h1', 'h2', 'h3']):
+            text = tag.get_text(strip=True)
+            if text:
+                structure['main_sections'].append({
+                    'text': text,
+                    'level': int(tag.name[1]),
+                    'context': self.get_surrounding_context(tag)
+                })
+
+        # Find key elements
+        for elem in soup.find_all(['p', 'div', 'section']):
+            text = elem.get_text(strip=True)
+            if len(text) > 50:  # Minimum length for significance
+                sentiment = TextBlob(text).sentiment
+                if abs(sentiment.polarity) > 0.3:  # Check for significant sentiment
+                    structure['key_elements'].append({
+                        'text': text,
+                        'sentiment': sentiment.polarity,
+                        'importance': sentiment.subjectivity
+                    })
+
+        # Detect interaction points
+        for elem in soup.find_all(['button', 'a', 'form']):
+            text = elem.get_text(strip=True)
+            if text:
+                structure['interaction_points'].append({
+                    'text': text,
+                    'type': elem.name,
+                    'context': self.get_surrounding_context(elem)
+                })
+
+        # Extract value propositions
+        for elem in soup.find_all(['p', 'div']):
+            text = elem.get_text(strip=True)
+            if any(phrase in text.lower() for phrase in ['we offer', 'our', 'best', 'leading', 'unique']):
+                structure['value_propositions'].append(text)
+
+        return structure
+
+    def get_surrounding_context(self, elem, context_size=100):
+        """Get the surrounding text context of an element"""
+        prev_sibling = elem.find_previous_sibling()
+        next_sibling = elem.find_next_sibling()
+        
+        context = []
+        if prev_sibling:
+            context.append(prev_sibling.get_text(strip=True)[-context_size:])
+        if next_sibling:
+            context.append(next_sibling.get_text(strip=True)[:context_size])
+            
+        return ' ... '.join(context)
+
+    def extract_semantic_relationships(self, text):
+        """Extract semantic relationships between concepts"""
+        sentences = sent_tokenize(text)
+        relationships = []
+        
+        for sentence in sentences:
+            doc = TextBlob(sentence)
+            if doc.sentiment.polarity != 0:
+                relationships.append({
+                    'text': sentence,
+                    'sentiment': doc.sentiment.polarity,
+                    'concepts': self.extract_key_topics(sentence, 2)
+                })
+        
+        return relationships
+
+def analyze_webpage(url):
+    """Main function to analyze any webpage dynamically"""
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        analyzer = DynamicContentAnalyzer()
+        
+        # Get all text content
+        text_content = " ".join([text for text in soup.stripped_strings 
+                               if any(c.isalpha() for c in text)])
+        
+        # Extract key topics
+        key_topics = analyzer.extract_key_topics(text_content)
+        
+        # Analyze content structure
+        structure = analyzer.analyze_content_structure(soup)
+        
+        # Extract semantic relationships
+        relationships = analyzer.extract_semantic_relationships(text_content)
+        
+        # Generate brand values based on content analysis
+        brand_values = {
+            "mission": structure['value_propositions'][0] if structure['value_propositions'] else "",
+            "values": key_topics[:3],
+            "virtues": [elem['text'] for elem in structure['key_elements'][:2] 
+                       if elem['sentiment'] > 0],
+        }
+        
+        # Generate ICP based on content and interaction analysis
+        icp_data = {
+            "demographics": {
+                "interests": key_topics[:3]
+            },
+            "psychographics": {
+                "priorities": [rel['text'] for rel in relationships[:2]],
+                "pain_points": [elem['text'] for elem in structure['key_elements'] 
+                              if elem['sentiment'] < 0][:3]
+            }
+        }
+        
+        # Calculate archetype scores based on content sentiment and structure
+        archetype_scores = calculate_dynamic_archetypes(
+            structure['key_elements'],
+            relationships,
+            structure['interaction_points']
+        )
+        
+        # Generate recommendations based on analysis
+        recommendations = generate_dynamic_recommendations(
+            brand_values,
+            archetype_scores,
+            structure,
+            relationships
+        )
+        
+        return {
+            "url": url,
+            "brand_values": brand_values,
+            "icp_data": icp_data,
+            "archetype_scores": archetype_scores,
+            "recommendations": recommendations,
+            "is_completed": True
+        }
+        
+    except Exception as e:
+        return {"error": f"Error analyzing webpage: {str(e)}"}
+
+def calculate_dynamic_archetypes(key_elements, relationships, interaction_points):
+    """Calculate archetype scores based on content characteristics"""
+    scores = {
+        "Autonomous": 0,
+        "Impulsive": 0,
+        "Avoidant": 0
+    }
+    
+    # Analyze key elements sentiment
+    for elem in key_elements:
+        if elem['sentiment'] > 0.3:
+            scores["Autonomous"] += 1
+        elif elem['sentiment'] < -0.3:
+            scores["Avoidant"] += 1
+        else:
+            scores["Impulsive"] += 1
+            
+    # Analyze relationships
+    for rel in relationships:
+        if rel['sentiment'] > 0:
+            scores["Autonomous"] += 0.5
+        elif rel['sentiment'] < 0:
+            scores["Avoidant"] += 0.5
+            
+    # Analyze interaction points
+    for point in interaction_points:
+        if 'buy' in point['text'].lower() or 'get' in point['text'].lower():
+            scores["Impulsive"] += 1
+        elif 'learn' in point['text'].lower() or 'discover' in point['text'].lower():
+            scores["Autonomous"] += 1
+            
+    # Normalize scores
+    total = sum(scores.values()) or 1
+    return {k: round(v/total * 100, 2) for k, v in scores.items()}
+
+def generate_dynamic_recommendations(brand_values, archetype_scores, structure, relationships):
+    """Generate recommendations based on content analysis"""
+    recommendations = []
+    
+    # Add recommendations based on content strengths
+    if archetype_scores["Autonomous"] > 30:
+        main_value = brand_values["values"][0] if brand_values["values"] else "quality"
+        recommendations.append(
+            f"Destaca la excelencia en {main_value} a través de contenido educativo y detallado."
+        )
+    
+    if archetype_scores["Impulsive"] > 30:
+        if structure['value_propositions']:
+            key_proposition = structure['value_propositions'][0]
+            recommendations.append(
+                f"Crea historias emocionales alrededor de '{key_proposition}'"
+            )
+    
+    # Add recommendations based on semantic relationships
+    positive_concepts = [rel['concepts'] for rel in relationships if rel['sentiment'] > 0]
+    if positive_concepts:
+        flat_concepts = [c for sublist in positive_concepts for c in sublist]
+        if flat_concepts:
+            recommendations.append(
+                f"Potencia el mensaje de {', '.join(flat_concepts[:2])} en tu comunicación."
+            )
+    
+    return recommendations or ["Personaliza tu estrategia basada en los valores identificados."]
+
+# [Previous rendering functions remain the same]

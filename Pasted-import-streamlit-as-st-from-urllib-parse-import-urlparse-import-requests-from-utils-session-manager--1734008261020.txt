@@ -1,0 +1,133 @@
+import streamlit as st
+from urllib.parse import urlparse
+import requests
+from utils.session_manager import initialize_session_state
+from bs4 import BeautifulSoup
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import re
+from collections import Counter
+from langdetect import detect
+
+# [Keep all your existing imports and functions until render_results()]
+
+def render_archetype_chart(archetype_scores):
+    """Render a visual chart for archetype scores"""
+    df_archetypes = pd.DataFrame({
+        'Archetype': list(archetype_scores.keys()),
+        'Score': list(archetype_scores.values())
+    })
+    
+    fig = px.bar(df_archetypes, 
+                x='Archetype', 
+                y='Score',
+                title='Archetype Distribution',
+                color='Score',
+                color_continuous_scale='Viridis')
+    
+    fig.update_layout(
+        height=400,
+        margin=dict(t=30, b=0, l=0, r=0)
+    )
+    
+    return fig
+
+def render_brand_values_card(brand_values):
+    """Render brand values in a structured card format"""
+    st.markdown("### 🎯 Brand Values")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Mission:**")
+        st.info(brand_values.get("mission", "N/A"))
+        
+    with col2:
+        st.markdown("**Core Values:**")
+        for value in brand_values.get("values", []):
+            st.markdown(f"- {value}")
+            
+    if brand_values.get("virtues"):
+        st.markdown("**Brand Virtues:**")
+        for virtue in brand_values.get("virtues", []):
+            st.markdown(f"- {virtue}")
+
+def render_icp_card(icp_data):
+    """Render ICP data in a structured card format"""
+    st.markdown("### 👥 Ideal Customer Profile")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Demographics:**")
+        st.markdown(f"Age Range: {icp_data['demographics'].get('age_range', 'N/A')}")
+        
+        st.markdown("**Interests:**")
+        for interest in icp_data['demographics'].get('interests', []):
+            st.markdown(f"- {interest}")
+            
+    with col2:
+        st.markdown("**Psychographics:**")
+        
+        st.markdown("*Priorities:*")
+        for priority in icp_data['psychographics'].get('priorities', []):
+            st.markdown(f"- {priority}")
+            
+        st.markdown("*Pain Points:*")
+        for point in icp_data['psychographics'].get('pain_points', []):
+            st.markdown(f"- {point}")
+
+def render_recommendations_card(recommendations):
+    """Render recommendations in a visual card format"""
+    st.markdown("### 💡 Strategic Recommendations")
+    
+    for idx, rec in enumerate(recommendations, 1):
+        st.markdown(f"""
+        <div style='padding: 10px; border-left: 3px solid #8e44ad; margin: 10px 0; background-color: #f8f9fa;'>
+            {idx}. {rec}
+        </div>
+        """, unsafe_allow_html=True)
+
+def render_results():
+    """Display the enhanced SEO analysis results with visual components."""
+    if st.session_state.webpage_analysis["is_completed"]:
+        st.markdown("## 📊 Analysis Results")
+        
+        # Create tabs for different sections
+        tab1, tab2, tab3 = st.tabs(["Brand & Audience", "Detailed Analysis", "Raw Data"])
+        
+        with tab1:
+            # Archetype Visualization
+            st.plotly_chart(
+                render_archetype_chart(st.session_state.webpage_analysis["archetype_scores"]),
+                use_container_width=True
+            )
+            
+            # Brand Values and ICP in two columns
+            col1, col2 = st.columns(2)
+            with col1:
+                render_brand_values_card(st.session_state.webpage_analysis["brand_values"])
+            with col2:
+                render_icp_card(st.session_state.webpage_analysis["icp_data"])
+            
+            # Recommendations
+            render_recommendations_card(st.session_state.webpage_analysis["recommendations"])
+            
+        with tab2:
+            # Detailed analysis with original JSON format
+            st.subheader("Brand Values")
+            st.json(st.session_state.webpage_analysis["brand_values"])
+            
+            st.subheader("Ideal Customer Profile")
+            st.json(st.session_state.webpage_analysis["icp_data"])
+            
+            st.subheader("Archetype Scores")
+            st.json(st.session_state.webpage_analysis["archetype_scores"])
+        
+        with tab3:
+            # Raw data for developers
+            st.subheader("Raw Analysis Data")
+            st.json(st.session_state.webpage_analysis)
+
+# [Keep all your other existing functions unchanged]

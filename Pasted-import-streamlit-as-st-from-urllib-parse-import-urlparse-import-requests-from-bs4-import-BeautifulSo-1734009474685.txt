@@ -1,0 +1,360 @@
+import streamlit as st
+from urllib.parse import urlparse
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import re
+from collections import Counter, defaultdict
+from langdetect import detect
+import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+from nltk.probability import FreqDist
+from nltk.collocations import BigramAssocMeasures, BigramCollocationFinder
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
+from textblob import TextBlob
+import concurrent.futures
+import aiohttp
+import asyncio
+
+# Initialize NLTK components
+try:
+    nltk.data.find('tokenizers/punkt')
+    nltk.data.find('averaged_perceptron_tagger')
+    nltk.data.find('maxent_ne_chunker')
+    nltk.data.find('words')
+except LookupError:
+    nltk.download('punkt')
+    nltk.download('averaged_perceptron_tagger')
+    nltk.download('maxent_ne_chunker')
+    nltk.download('words')
+    nltk.download('stopwords')
+
+class IndustryClassifier:
+    """Classify website industry based on content analysis"""
+    
+    def __init__(self):
+        self.industry_patterns = {
+            'e-commerce': {
+                'keywords': ['shop', 'cart', 'product', 'price', 'tienda', 'comprar', 'precio'],
+                'patterns': [
+                    r'add.+cart',
+                    r'check.?out',
+                    r'shipping',
+                    r'(?:agregar|añadir).+carrito'
+                ]
+            },
+            'tech': {
+                'keywords': ['software', 'app', 'technology', 'digital', 'tecnología', 'aplicación'],
+                'patterns': [
+                    r'cloud|nube',
+                    r'AI|ML|IA',
+                    r'platform|plataforma'
+                ]
+            },
+            'education': {
+                'keywords': ['course', 'learn', 'training', 'curso', 'aprender', 'formación'],
+                'patterns': [
+                    r'enroll|inscribe',
+                    r'lesson|lección',
+                    r'certificate|certificado'
+                ]
+            },
+            'health': {
+                'keywords': ['health', 'medical', 'wellness', 'salud', 'médico', 'bienestar'],
+                'patterns': [
+                    r'treatment|tratamiento',
+                    r'doctor|médico',
+                    r'clinic|clínica'
+                ]
+            }
+        }
+
+    def classify(self, text, url):
+        scores = defaultdict(int)
+        
+        # URL analysis
+        for industry, patterns in self.industry_patterns.items():
+            if any(kw in url.lower() for kw in patterns['keywords']):
+                scores[industry] += 2
+
+        # Content analysis
+        text_lower = text.lower()
+        for industry, patterns in self.industry_patterns.items():
+            # Keyword matching
+            keyword_matches = sum(text_lower.count(kw) for kw in patterns['keywords'])
+            scores[industry] += keyword_matches
+
+            # Pattern matching
+            pattern_matches = sum(len(re.findall(pattern, text_lower)) 
+                                for pattern in patterns['patterns'])
+            scores[industry] += pattern_matches * 2
+
+        # Normalize scores
+        total = sum(scores.values()) or 1
+        normalized_scores = {k: round(v/total * 100, 2) for k, v in scores.items()}
+        
+        return {
+            'primary_industry': max(normalized_scores.items(), key=lambda x: x[1])[0],
+            'scores': normalized_scores
+        }
+
+class SemanticAnalyzer:
+    """Enhanced semantic analysis with advanced NLP features"""
+    
+    def __init__(self, language='en'):
+        self.language = language
+        self.stop_words = set(stopwords.words('spanish' if language == 'es' else 'english'))
+        self.vectorizer = TfidfVectorizer(stop_words=self.stop_words)
+
+    def extract_key_phrases(self, text):
+        """Extract important phrases using collocation detection"""
+        words = word_tokenize(text.lower())
+        words = [w for w in words if w not in self.stop_words and w.isalnum()]
+        
+        bigram_measures = BigramAssocMeasures()
+        finder = BigramCollocationFinder.from_words(words)
+        finder.apply_freq_filter(2)
+        
+        return finder.nbest(bigram_measures.pmi, 10)
+
+    def analyze_sentiment(self, text):
+        """Analyze text sentiment and subjectivity"""
+        blob = TextBlob(text)
+        return {
+            'sentiment': blob.sentiment.polarity,
+            'subjectivity': blob.sentiment.subjectivity
+        }
+
+    def extract_entities(self, text):
+        """Extract named entities from text"""
+        tokens = nltk.word_tokenize(text)
+        tagged = nltk.pos_tag(tokens)
+        entities = nltk.chunk.ne_chunk(tagged)
+        
+        extracted = defaultdict(list)
+        for entity in entities:
+            if hasattr(entity, 'label'):
+                extracted[entity.label()].append(' '.join(c[0] for c in entity))
+        
+        return dict(extracted)
+
+    def analyze_readability(self, text):
+        """Calculate text readability metrics"""
+        sentences = sent_tokenize(text)
+        words = word_tokenize(text)
+        word_count = len(words)
+        sentence_count = len(sentences)
+        
+        if sentence_count == 0:
+            return {'score': 0, 'level': 'N/A'}
+            
+        avg_sentence_length = word_count / sentence_count
+        
+        # Simplified readability score
+        score = 206.835 - (1.015 * avg_sentence_length)
+        
+        levels = {
+            (90, 100): 'Very Easy',
+            (80, 90): 'Easy',
+            (70, 80): 'Fairly Easy',
+            (60, 70): 'Standard',
+            (50, 60): 'Fairly Difficult',
+            (30, 50): 'Difficult',
+            (0, 30): 'Very Difficult'
+        }
+        
+        for (min_score, max_score), level in levels.items():
+            if min_score <= score <= max_score:
+                return {'score': round(score, 2), 'level': level}
+
+class CompetitiveAnalyzer:
+    """Analyze competition based on similar websites"""
+
+    def __init__(self):
+        self.similar_sites_patterns = [
+            r'related:|similar to:|alternatives to',
+            r'compared to|vs\.',
+            r'competition|competitor'
+        ]
+
+    async def fetch_site(self, session, url):
+        """Fetch website content asynchronously"""
+        try:
+            async with session.get(url, timeout=10) as response:
+                return await response.text()
+        except:
+            return None
+
+    async def analyze_competitors(self, main_url):
+        """Find and analyze competitor websites"""
+        search_url = f"https://www.google.com/search?q=related:{main_url}"
+        competitors = []
+
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(search_url) as response:
+                    text = await response.text()
+                    soup = BeautifulSoup(text, 'html.parser')
+                    
+                    # Extract competitor URLs
+                    for link in soup.find_all('a'):
+                        href = link.get('href', '')
+                        if 'url?' in href and main_url not in href:
+                            competitors.append(urlparse(href).netloc)
+                            if len(competitors) >= 5:
+                                break
+
+                # Analyze competitor content
+                tasks = [self.fetch_site(session, f"http://{url}") for url in competitors]
+                responses = await asyncio.gather(*tasks)
+                
+                analyses = []
+                for url, html in zip(competitors, responses):
+                    if html:
+                        soup = BeautifulSoup(html, 'html.parser')
+                        analyses.append({
+                            'url': url,
+                            'title': soup.title.string if soup.title else '',
+                            'keywords': self._extract_keywords(soup),
+                            'main_features': self._extract_features(soup)
+                        })
+
+                return analyses
+            except Exception as e:
+                return []
+
+    def _extract_keywords(self, soup):
+        """Extract keywords from competitor website"""
+        meta_keywords = soup.find('meta', {'name': 'keywords'})
+        if meta_keywords:
+            return [k.strip() for k in meta_keywords['content'].split(',')]
+        return []
+
+    def _extract_features(self, soup):
+        """Extract main features from competitor website"""
+        features = []
+        for elem in soup.find_all(['h1', 'h2', 'h3']):
+            text = elem.get_text(strip=True)
+            if text and any(c.isalpha() for c in text):
+                features.append(text)
+        return features[:5]
+
+class ContentCategorizer:
+    """Categorize content by type and purpose"""
+    
+    def __init__(self):
+        self.categories = {
+            'product': {
+                'patterns': [
+                    r'buy now|comprar ahora',
+                    r'add to cart|agregar al carrito',
+                    r'price|precio'
+                ],
+                'indicators': ['$', '€', 'USD', 'EUR']
+            },
+            'service': {
+                'patterns': [
+                    r'our services|nuestros servicios',
+                    r'what we do|que hacemos',
+                    r'how we help|como ayudamos'
+                ]
+            },
+            'blog': {
+                'patterns': [
+                    r'posted|publicado',
+                    r'author|autor',
+                    r'comments|comentarios'
+                ]
+            },
+            'landing': {
+                'patterns': [
+                    r'sign up|registrate',
+                    r'get started|empezar',
+                    r'try now|prueba ahora'
+                ]
+            }
+        }
+
+    def categorize_page(self, soup):
+        """Determine page category and content structure"""
+        text = soup.get_text()
+        scores = defaultdict(int)
+        
+        for category, rules in self.categories.items():
+            # Check patterns
+            patterns = rules.get('patterns', [])
+            for pattern in patterns:
+                matches = len(re.findall(pattern, text, re.I))
+                scores[category] += matches * 2
+            
+            # Check indicators
+            indicators = rules.get('indicators', [])
+            for indicator in indicators:
+                scores[category] += text.count(indicator)
+
+        # Get primary and secondary categories
+        sorted_categories = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        
+        return {
+            'primary_category': sorted_categories[0][0] if sorted_categories else None,
+            'secondary_category': sorted_categories[1][0] if len(sorted_categories) > 1 else None,
+            'scores': dict(sorted_categories)
+        }
+
+def analyze_webpage(url):
+    """Enhanced webpage analysis with all new features"""
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        # Initialize analyzers
+        industry_classifier = IndustryClassifier()
+        semantic_analyzer = SemanticAnalyzer()
+        content_categorizer = ContentCategorizer()
+        competitive_analyzer = CompetitiveAnalyzer()
+        
+        # Extract basic content
+        text_content = " ".join([text for text in soup.stripped_strings 
+                               if any(c.isalpha() for c in text)])
+        
+        # Run analyses
+        language = detect_language(text_content)
+        industry_info = industry_classifier.classify(text_content, url)
+        
+        semantic_analysis = {
+            'key_phrases': semantic_analyzer.extract_key_phrases(text_content),
+            'sentiment': semantic_analyzer.analyze_sentiment(text_content),
+            'entities': semantic_analyzer.extract_entities(text_content),
+            'readability': semantic_analyzer.analyze_readability(text_content)
+        }
+        
+        content_category = content_categorizer.categorize_page(soup)
+        
+        # Run competitive analysis asynchronously
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        competitors = loop.run_until_complete(
+            competitive_analyzer.analyze_competitors(url)
+        )
+        loop.close()
+        
+        return {
+            'url': url,
+            'language': language,
+            'industry': industry_info,
+            'semantic_analysis': semantic_analysis,
+            'content_category': content_category,
+            'competitors': competitors,
+            'raw_text': text_content
+        }
+        
+    except Exception as e:
+        return {"error": f"Error analyzing webpage: {str(e)}"}
+
+# [Rest of the rendering functions remain the same]
