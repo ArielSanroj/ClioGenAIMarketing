@@ -3,6 +3,26 @@ import streamlit as st
 def apply_custom_styles():
     st.markdown("""
         <style>
+        /* Sidebar styles */
+        section[data-testid="stSidebar"] {
+            background-color: #1E1B4B !important;
+        }
+        section[data-testid="stSidebar"] div.stButton button {
+            color: white !important;
+        }
+        section[data-testid="stSidebar"] .stRadio label {
+            color: white !important;
+        }
+        section[data-testid="stSidebar"] .stSelectbox label {
+            color: white !important;
+        }
+        section[data-testid="stSidebar"] h1 {
+            color: white !important;
+        }
+        section[data-testid="stSidebar"] p {
+            color: white !important;
+        }
+        
         /* Main layout and colors */
         .main {
             background-color: #F9F9FB !important;
