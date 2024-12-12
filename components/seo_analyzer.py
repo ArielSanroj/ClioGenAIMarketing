@@ -223,6 +223,8 @@ def render_icp_card(icp_data, archetype_scores=None):
     """Render a card displaying ICP data"""
     st.markdown("### 👥 Ideal Customer Profile")
     
+    recommendations = []
+    
     if "demographics" in icp_data:
         st.markdown("**Demographics:**")
         st.write(f"Age Range: {icp_data['demographics']['age_range']}")
