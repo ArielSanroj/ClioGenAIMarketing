@@ -1,6 +1,7 @@
 
 import streamlit as st
 from urllib.parse import urlparse
+from utils.session_manager import initialize_session_state
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
